@@ -8,14 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.nestorrente.jitl.module.JitlModule;
-import com.nestorrente.jitl.template.TemplateProcessor;
+import com.nestorrente.jitl.template.TemplateEngine;
 
 // TODO IMPORTANTE: añadir case converters (o path converters) para transformar las clases/métodos en filepaths
-// TODO Interesante: añadir formas de crear instancias por defecto de Jitl sin rallarse? Implicaría eso necesariamente tener algún template processor y algún módulo en el core?
+// TODO Interesante: añadir formas de crear instancias por defecto de Jitl sin rallarse? Implicaría eso necesariamente tener algún template engine y algún módulo en el core?
 // TODO crear más módulos y adaptar más procesadores de plantillas.
 public class Jitl {
 
-	private final TemplateProcessor templateProcessor;
+	private final TemplateEngine templateEngine;
 
 	private final Collection<String> fileExtensions;
 	private final Collection<String> unmodifiableFileExtensionsView;
@@ -23,9 +23,9 @@ public class Jitl {
 	private final Map<Class<? extends JitlModule>, JitlModule> modules;
 	private final Map<Class<? extends JitlModule>, JitlModule> unmodifiableModulesView;
 
-	Jitl(TemplateProcessor templateProcessor, Collection<String> fileExtensions, Map<Class<? extends JitlModule>, JitlModule> modules) {
+	Jitl(TemplateEngine templateEngine, Collection<String> fileExtensions, Map<Class<? extends JitlModule>, JitlModule> modules) {
 
-		this.templateProcessor = templateProcessor;
+		this.templateEngine = templateEngine;
 
 		this.fileExtensions = new ArrayList<>(fileExtensions);
 		this.fileExtensions.add("txt");
@@ -56,8 +56,8 @@ public class Jitl {
 
 	}
 
-	public TemplateProcessor getTemplateProcessor() {
-		return this.templateProcessor;
+	public TemplateEngine getTemplateProcessor() {
+		return this.templateEngine;
 	}
 
 	public Collection<String> getFileExtensions() {

@@ -12,11 +12,11 @@ import org.apache.commons.io.IOUtils;
 import com.nestorrente.jitl.util.PatternUtils;
 import com.nestorrente.jitl.util.ResourceUtils;
 
-public class DefaultTemplateProcessor implements TemplateProcessor {
+public class DefaultTemplateEngine implements TemplateEngine {
 
-	private static final TemplateProcessor INSTANCE = new DefaultTemplateProcessor();
+	private static final TemplateEngine INSTANCE = new DefaultTemplateEngine();
 
-	public static TemplateProcessor getInstance() {
+	public static TemplateEngine getInstance() {
 		return INSTANCE;
 	}
 

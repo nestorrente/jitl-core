@@ -10,24 +10,24 @@ import java.util.Map;
 import org.apache.commons.lang3.builder.Builder;
 
 import com.nestorrente.jitl.module.JitlModule;
-import com.nestorrente.jitl.template.DefaultTemplateProcessor;
-import com.nestorrente.jitl.template.TemplateProcessor;
+import com.nestorrente.jitl.template.DefaultTemplateEngine;
+import com.nestorrente.jitl.template.TemplateEngine;
 import com.nestorrente.jitl.util.ArrayUtils;
 
 public class JitlBuilder implements Builder<Jitl> {
 
-	private TemplateProcessor templateProcessor;
+	private TemplateEngine templateEngine;
 	private final List<String> fileExtensions;
 	private final Map<Class<? extends JitlModule>, JitlModule> modules;
 
 	public JitlBuilder() {
-		this.templateProcessor = DefaultTemplateProcessor.getInstance();
+		this.templateEngine = DefaultTemplateEngine.getInstance();
 		this.fileExtensions = new ArrayList<>();
 		this.modules = new HashMap<>();
 	}
 
-	public JitlBuilder setTemplateProcessor(TemplateProcessor templateProcessor) {
-		this.templateProcessor = templateProcessor;
+	public JitlBuilder setTemplateProcessor(TemplateEngine templateEngine) {
+		this.templateEngine = templateEngine;
 		return this;
 	}
 
@@ -58,7 +58,7 @@ public class JitlBuilder implements Builder<Jitl> {
 
 		Collections.reverse(instanceFileExtensions);
 
-		return new Jitl(this.templateProcessor, instanceFileExtensions, this.modules);
+		return new Jitl(this.templateEngine, instanceFileExtensions, this.modules);
 
 	}
 
