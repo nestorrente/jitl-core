@@ -1,0 +1,50 @@
+PRIORITARIO:
+- Cambiar los tests a HSQLDB para no depender de ninguna base de datos externa.
+- Comentar en inglés para subir a GitHub/Maven.
+
+---
+
+✓ Plantear executors como uno solo con diferentes transformers.
+✓ En la clase QueryExecutors estarían los mismos que ahora, inicializados con su transformer correspondiente.
+✓ Los adapters devuelven el Transformer? Creo que mejor, deberían seguir devolviendo el executor.
+✓ Un executor por cada método? Sí, tendría sentido, por los adapter (van por tipo de retorno del método).
+✓ Ver, si se hacen para cosas que no sean SQL, tiene sentido que el Executor reciba la conexión en el constructor y no en el método execute().
+	✓ Solventado haciendo que la conexión sea algo propio del módulo de SQL.
+✓ Ver, entonces, cómo gestionar los executors. Uno por método e invocation handler?
+
+✗ QueryUtilities? No lo veo
+
+---
+
+✗ Como ya se dijo, existirá un único QueryExecutor, y QueryExecutors será una clase que provea de varios executors con transformers predeterminados.
+	✓ Ya no existe QueryExecutor, pero existe un método del módulo SQL que hace uso de los transformers para ejecutar una consulta.
+✗ Esto será la librería de SQL Templates. --> repensar si realmente tiene sentido esa librería por separado. Los transformers "potentes" necesitarán hacer uso de los transformers delegados.
+	✓ La existencia de esta librería por separado se ha descartado.
+✓ Después estará la librería de Interface Templates, que será para todo tipo de templates.
+	✓ Es Jitl en sí misma.
+✗ Existirán unos módulos, que serán algo así como Module<T extends Transformer>, que recibirán un T que será la clase base transformadora del resultado al tipo de retorno de los métodos de la interfaz.
+	✓ Los módulos no necesariamente van a necesitar transformers, puesto que pueden ser módulos que acepten unos tipos muy concretos. Debido a esto, los transformers son exclusivos del módulo de SQL.
+✓ El module tendrá los métodos de registro de los transformers (hasta ahora se registraban executors).
+✓ El SQLModule creará un QueryExecutor con el transformer correspondiente.
+~ Los módulos tendrán un pre-render y un post-render (necesitamos el post para reemplazar los :parameter en las SQL), que recibirán también los parámetros.
+	✓ Ahora tienen un post-process, pero no les metimos un pre-process todavía. ¿Es realmente necesario? ¿Tiene sentido? 
+✓ Aislar JTwig, de modo que se pueda utilizar cualquier tipo de librería de plantillas creando un Adapter. El Adapter de JTwig ya lo ofrecemos por defecto.
+	✓ Diferentes librerías de plantillas por módulo? Yo diría que no, que creen varias instancias de Jitl si se quieren usar varias librerías. Obligamos, incluso, a ser más organizados y que la instancia de Jitl no se convierta en un cajón de sastre donde se usa de todo.
+
+---
+
+✗ Ver la opción de que los transformers devuelvan Optional?
+✓ Distinguir entre transformers simples y múltiples? (uno o varios resultados) Los simples sí podrían devolver Optional.
+
+---
+
+- Devolver un mapa clave-valor cuando se pide Object?
+
+---
+
+Nombre: Jitl (Java Interface Template Library)
+
+---
+
+LO ANTES POSIBLE:
+✓ Refactorizar la separación de paquetes para orientarla a los módulos. Separar las clases/interfaces genéricas de las del módulo.
