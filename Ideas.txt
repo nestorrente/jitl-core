@@ -1,5 +1,6 @@
 PRIORITARIO:
 - Cambiar los tests a HSQLDB para no depender de ninguna base de datos externa.
+	- Aprovechar para quitar los "pirolo". Revisar que los tests estén bien hechos.
 - Comentar en inglés para subir a GitHub/Maven.
 
 ---
