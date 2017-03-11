@@ -11,6 +11,4 @@ public @interface ClasspathTemplate {
 
 	String value();
 
-	boolean cache() default true; // TODO las cachés todavía no están implementadas
-
 }

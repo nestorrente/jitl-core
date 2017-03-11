@@ -12,28 +12,29 @@ import com.google.common.collect.Iterables;
 import com.nestorrente.jitl.annotation.BaseClasspath;
 import com.nestorrente.jitl.annotation.ClasspathTemplate;
 import com.nestorrente.jitl.annotation.InlineTemplate;
-import com.nestorrente.jitl.annotation.Module;
 import com.nestorrente.jitl.annotation.Param;
 import com.nestorrente.jitl.annotation.Params;
-import com.nestorrente.jitl.module.JitlModule;
+import com.nestorrente.jitl.annotation.PostProcessor;
+import com.nestorrente.jitl.postprocessor.JitlPostProcessor;
 import com.nestorrente.jitl.util.ReflectionUtils;
 import com.nestorrente.jitl.util.ResourceUtils;
 import com.nestorrente.jitl.util.StringUtils;
 
+// TODO refactor this class for doing unit-tests (i.e., a method that allows get the resource path of a class method)
 class JitlMethodInvocationHandler implements InvocationHandler {
 
-	private static final class FallbackModule extends JitlModule {
+	private static final class FallbackPostProcessor extends JitlPostProcessor {
 
-		public static final FallbackModule INSTANCE = new FallbackModule();
+		public static final FallbackPostProcessor INSTANCE = new FallbackPostProcessor();
 
-		private FallbackModule() {
+		private FallbackPostProcessor() {
 			super(Collections.emptyList());
 		}
 
 	}
 
 	@SuppressWarnings("unused")
-	private final Class<?> interfaze; // TODO cachear los métodos (su executor en base a su return type, y su SQL si es @Classpath y procede)
+	private final Class<?> interfaze; // TODO cache the post-processor for every method?
 
 	private final Jitl jitl;
 
@@ -47,70 +48,65 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		Map<String, Object> parameters = this.getTemplateParameters(method, args);
 
-		JitlModule module = this.getModule(method);
+		JitlPostProcessor postProcessor = this.getPostProcessor(method);
 
-		String renderedTemplate = this.renderTemplate(method, parameters, module);
+		String renderedTemplate = this.renderTemplate(method, parameters, postProcessor);
 
-		return module.postProcess(this.jitl, method, renderedTemplate, parameters);
+		return postProcessor.postProcess(this.jitl, method, renderedTemplate, parameters);
 
 	}
 
-	private String renderTemplate(Method method, Map<String, Object> parameters, JitlModule module) {
+	private String renderTemplate(Method method, Map<String, Object> parameters, JitlPostProcessor postProcessor) {
 
-		// TODO separar toda esta clase en funcionalidades que permitan hacer tests unitarios (por ejemplo, de un método sacar la URI de su resource)
-
-		// TODO controlar que el método no esté anotado con más de un tipo de template o con el mismo tipo varias veces (esto puede que no sea posible, ya que las anotaciones no son @Repeatable)
-
-		// TODO investigar diferencia entre method.getAnnotationsByType(...) y method.getDeclaredAnnotationsByType(...)
-		// ¿tendrá que ver con la sobrescritura y las anotaciones que tenía el método en la clase padre?
+		// TODO don't allow @InlineTemplate and @Classpath template at the same time
 
 		Optional<InlineTemplate> inlineAnnotation = ReflectionUtils.getAnnotation(method, InlineTemplate.class);
 
 		if(inlineAnnotation.isPresent()) {
-			return this.jitl.getTemplateProcessor().renderString(inlineAnnotation.get().value(), parameters);
+			return this.jitl.getTemplateEngine().renderString(inlineAnnotation.get().value(), parameters);
 		}
 
 		String templateUri = this.getTemplateUri(method);
 
 		if(ResourceUtils.resourceExists(templateUri)) {
-			return this.jitl.getTemplateProcessor().renderResource(templateUri, parameters);
+			return this.jitl.getTemplateEngine().renderResource(templateUri, parameters);
 		}
 
-		for(String extension : Iterables.concat(module.getFileExtensions(), this.jitl.getFileExtensions())) {
+		for(String extension : Iterables.concat(postProcessor.getFileExtensions(), this.jitl.getFileExtensions())) {
 
 			String templateUriWithExtension = templateUri + "." + extension;
 
 			if(ResourceUtils.resourceExists(templateUriWithExtension)) {
-				return this.jitl.getTemplateProcessor().renderResource(templateUriWithExtension, parameters);
+				return this.jitl.getTemplateEngine().renderResource(templateUriWithExtension, parameters);
 			}
 
 		}
 
-		// TODO cambiar por una excepción más apropiada
+		// TODO replace with a custom exception
 		throw new RuntimeException("Resource not found: " + templateUri);
 
 	}
 
-	private JitlModule getModule(Method method) {
+	private JitlPostProcessor getPostProcessor(Method method) {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 
-		Optional<Class<? extends JitlModule>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, Module.class, a -> a.value());
+		Optional<Class<? extends JitlPostProcessor>> postProcessorClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, PostProcessor.class, a -> a.value());
 
-		if(!moduleClassOptional.isPresent()) {
-			return FallbackModule.INSTANCE;
+		if(!postProcessorClassOptional.isPresent()) {
+			return FallbackPostProcessor.INSTANCE;
 		}
 
-		Class<? extends JitlModule> moduleClass = moduleClassOptional.get();
+		Class<? extends JitlPostProcessor> postProcessorClass = postProcessorClassOptional.get();
 
-		JitlModule module = this.jitl.getModules().get(moduleClass);
+		JitlPostProcessor postProcessor = this.jitl.getPostProcessor(postProcessorClass);
 
-		if(module == null) {
-			// TODO cambiar por una más adecuada
-			throw new RuntimeException("Module " + moduleClass.getName() + " is not registered in this " + Jitl.class.getSimpleName() + " instance");
+		if(postProcessor == null) {
+			// TODO replace with a custom exception
+			throw new RuntimeException("PostProcessor " + postProcessorClass.getName() + " is not registered in this " + Jitl.class.getSimpleName() + " instance");
 		}
 
-		return module;
+		return postProcessor;
 
 	}
 
@@ -134,12 +130,12 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 	private Map<String, Object> getTemplateParameters(Method method, Object[] args) {
 
-		// TODO impedir que se usen @Params y @Param a la vez? Ahora mismo, prevalece @Param
+		// TODO don't allow using @Params and @Param at the same time
 
 		Optional<String[]> paramsAnnotationValues = ReflectionUtils.getAnnotationValue(method, Params.class, a -> a.value());
 
 		if(paramsAnnotationValues.isPresent() && method.getParameterCount() != paramsAnnotationValues.get().length) {
-			// TODO cambiar por una excepción más apropiada
+			// TODO replace with a custom exception
 			throw new RuntimeException("@Params annotation must specify the name of all parameters");
 		}
 
@@ -166,7 +162,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 				name = param.getName();
 
 			} else {
-				// TODO cambiar por una más adecuada
+				// TODO replace with a custom exception
 				throw new RuntimeException("Cannot infer parameter name: " + param.toString());
 			}
 

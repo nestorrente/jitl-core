@@ -35,7 +35,7 @@ public class DefaultTemplateEngine implements TemplateEngine {
 			return this.renderString(IOUtils.toString(is, Charset.defaultCharset()), parameters);
 
 		} catch(IOException ex) {
-			// TODO replace with a better exception
+			// TODO replace with a custom exception
 			throw new RuntimeException(ex);
 		}
 

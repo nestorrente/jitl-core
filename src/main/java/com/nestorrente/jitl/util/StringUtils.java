@@ -13,7 +13,7 @@ public class StringUtils {
 
 	public static String camelToLowerUnderscore(String camel) {
 
-		// FIXME ver por qué String::toLowerCase en el PatternUtils.replace(...) resulta "ambiguo" según el compilador de Maven
+		// FIXME for some unknown reason, passing String::toLowerCase to PatternUtils.replace(...) is "ambiguous" for Maven compiler
 
 		// MySQLQuery -> MySqlQuery
 		String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, str -> str.toLowerCase());
@@ -26,7 +26,7 @@ public class StringUtils {
 
 	}
 
-	public static String join(String element, String delimiter, int times) {
+	public static String joinRepeating(String element, String delimiter, int times) {
 
 		StringJoiner joiner = new StringJoiner(delimiter);
 

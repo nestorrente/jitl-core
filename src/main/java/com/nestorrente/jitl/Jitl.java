@@ -7,23 +7,26 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.nestorrente.jitl.module.JitlModule;
+import com.nestorrente.jitl.postprocessor.JitlPostProcessor;
 import com.nestorrente.jitl.template.TemplateEngine;
 
-// TODO IMPORTANTE: añadir case converters (o path converters) para transformar las clases/métodos en filepaths
-// TODO Interesante: añadir formas de crear instancias por defecto de Jitl sin rallarse? Implicaría eso necesariamente tener algún template engine y algún módulo en el core?
-// TODO crear más módulos y adaptar más procesadores de plantillas.
+// TODO Important: add case-converters (or path-converters) for allowing custom "class+method to filepath" transformation
+// TODO Interesting: give a way to create Jitl instances with default engines and post-processors? (i.e., a Jitl instance with Jtwig template engine and SQL post-processor)
+// TODO create more post-processors and template engines
 public class Jitl {
+
+	public static JitlBuilder builder() {
+		return new JitlBuilder();
+	}
 
 	private final TemplateEngine templateEngine;
 
 	private final Collection<String> fileExtensions;
 	private final Collection<String> unmodifiableFileExtensionsView;
 
-	private final Map<Class<? extends JitlModule>, JitlModule> modules;
-	private final Map<Class<? extends JitlModule>, JitlModule> unmodifiableModulesView;
+	private final Map<Class<? extends JitlPostProcessor>, JitlPostProcessor> postProcessors;
 
-	Jitl(TemplateEngine templateEngine, Collection<String> fileExtensions, Map<Class<? extends JitlModule>, JitlModule> modules) {
+	Jitl(TemplateEngine templateEngine, Collection<String> fileExtensions, Map<Class<? extends JitlPostProcessor>, JitlPostProcessor> postProcessors) {
 
 		this.templateEngine = templateEngine;
 
@@ -33,9 +36,7 @@ public class Jitl {
 
 		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(this.fileExtensions);
 
-		this.modules = new HashMap<>(modules);
-
-		this.unmodifiableModulesView = Collections.unmodifiableMap(this.modules);
+		this.postProcessors = new HashMap<>(postProcessors);
 
 	}
 
@@ -56,16 +57,16 @@ public class Jitl {
 
 	}
 
-	public TemplateEngine getTemplateProcessor() {
+	TemplateEngine getTemplateEngine() {
 		return this.templateEngine;
 	}
 
-	public Collection<String> getFileExtensions() {
+	Collection<String> getFileExtensions() {
 		return this.unmodifiableFileExtensionsView;
 	}
 
-	public Map<Class<? extends JitlModule>, JitlModule> getModules() {
-		return this.unmodifiableModulesView;
+	JitlPostProcessor getPostProcessor(Class<? extends JitlPostProcessor> postProcessorClass) {
+		return this.postProcessors.get(postProcessorClass);
 	}
 
 }

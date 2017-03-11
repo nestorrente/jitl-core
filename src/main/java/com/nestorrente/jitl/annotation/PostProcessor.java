@@ -5,12 +5,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.nestorrente.jitl.module.JitlModule;
+import com.nestorrente.jitl.postprocessor.JitlPostProcessor;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Module {
+public @interface PostProcessor {
 
-	Class<? extends JitlModule> value();
+	Class<? extends JitlPostProcessor> value();
 
 }

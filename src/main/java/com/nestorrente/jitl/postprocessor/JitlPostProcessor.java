@@ -1,4 +1,4 @@
-package com.nestorrente.jitl.module;
+package com.nestorrente.jitl.postprocessor;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -8,12 +8,12 @@ import java.util.Map;
 
 import com.nestorrente.jitl.Jitl;
 
-public abstract class JitlModule {
+public abstract class JitlPostProcessor {
 
 	private final Collection<String> fileExtensions;
 	private final Collection<String> unmodifiableFileExtensionsView;
 
-	public JitlModule(Collection<String> fileExtensions) {
+	public JitlPostProcessor(Collection<String> fileExtensions) {
 		this.fileExtensions = new ArrayList<>(fileExtensions);
 		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(this.fileExtensions);
 	}
@@ -25,7 +25,7 @@ public abstract class JitlModule {
 	public Object postProcess(Jitl jitl, Method method, String renderedTemplate, Map<String, Object> parameters) throws Exception {
 
 		if(!String.class.equals(method.getReturnType())) {
-			// TODO cambiar por una más adecuada
+			// TODO replace with a custom exception
 			throw new IllegalArgumentException("Cannot transform template result to " + method.getGenericReturnType().getTypeName());
 		}
 

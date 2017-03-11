@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Optional;
@@ -62,16 +63,6 @@ public class ReflectionUtils {
 
 	}
 
-	// public static <T> TypeToken<?>[] getSuperclassTypeArguments(TypeToken<? extends T> typeToken, Class<T> superclass, int typeArgumentIndex) {
-	//
-	// TypeToken<?> superclassTypeToken = typeToken.getSupertype(superclass);
-	//
-	// ParameterizedType superclassAsParameterizedType = (ParameterizedType) superclassTypeToken.getType();
-	//
-	// return Arrays.stream(superclassAsParameterizedType.getActualTypeArguments()).map(t -> TypeToken.of(t)).toArray(l -> new TypeToken<?>[l]);
-	//
-	// }
-
 	public static Field getField(Class<?> clazz, String name) throws NoSuchFieldException {
 
 		NoSuchFieldException firstException;
@@ -99,6 +90,22 @@ public class ReflectionUtils {
 		} catch(IllegalArgumentException | IllegalAccessException ex) {
 			throw new RuntimeException(ex);
 		}
+	}
+
+	public static boolean returnsVoid(Method method) {
+
+		Class<?> returnType = method.getReturnType();
+
+		return void.class.equals(returnType) || Void.class.equals(returnType);
+
+	}
+
+	public static boolean returnsInt(Method method) {
+
+		Class<?> returnType = method.getReturnType();
+
+		return int.class.equals(returnType) || Integer.class.equals(returnType);
+
 	}
 
 }

@@ -55,8 +55,8 @@ public class SqlUtils {
 
 	public static Object getObject(ResultSet resultSet, int index) throws SQLException {
 
-		// TODO contemplar todos los tipos
-		// Los binarios hacerlos con getBytes o getBinaryStream?
+		// TODO add all SQL types
+		// Think about: binary types must use getBytes() or getBinaryStream()?
 		switch(resultSet.getMetaData().getColumnType(index)) {
 			case Types.ARRAY:
 				return resultSet.getArray(index);
