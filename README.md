@@ -162,6 +162,8 @@ Jitl jitl = Jitl.builder()
     .build();
 ```
 
+You can define your own ```TemplateEngine```s by implementing ```com.nestorrente.jitl.template.TemplateEngine``` interface.
+
 Other projects, like [```jitl-jtwig-template-engine```](https://github.com/nestorrente/jitl-jtwig-template-engine) provide thirty-party powerful template engines.
 
 ## Modules
@@ -169,6 +171,8 @@ Other projects, like [```jitl-jtwig-template-engine```](https://github.com/nesto
 ```Module```s are objects that can define additional file extensions and can perform additional operations **after** the rendering process (i.e. transform the result into another Java type). Many ```Module```s can be used in a single ```Jitl``` instance, but only one module can be used in each interface.
 
 By default, JITL doesn't use any module. This means that no additional operations are performed after the rendering process. Each interface can use the ```@UseModule``` annotation in order to specify which ```Module``` would be used when invoking its methods. See [@UseModule annotation](#usemodule-annotation).
+
+You can define your own ```Module```s by extending ```com.nestorrente.jitl.module.Module``` class.
 
 Other projects, like [```jitl-sql-module```](https://github.com/nestorrente/jitl-sql-module) provide powerful modules, allowing to perform some background operations and transform the result to another Java object (i.e., execute a SQL query in a database and transform the ```ResultSet``` to a *POJO*).
 
