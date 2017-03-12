@@ -2,6 +2,8 @@
 
 ## Table of contents
 + **[What is JITL](#what-is-jitl)**
++ **[Basic example](#basic-example)**
++ **[Advanced example](#advanced-example)**
 + **[File Extensions](#file-extensions)**
 + **[Template Engines](#template-engines)**
 + **[Modules](#modules)**
@@ -17,9 +19,14 @@
 
 ## What is JITL?
 
-JITL is a library that makes the job of rendering templates as simple as invoking a method.
-When using JITL, you only have to define a Java interface and JITL will find your templates in your *resources* folder. Method parameters are passed to the template. Let's see an example:
+JITL is a library that makes the job of rendering templates as simple as invoking a method. Using JITL, you only have to define a Java interface and JITL will find your template files in your *resources* folder. Method parameters are accessible within the template.
 
+First, JITL renders the template using a [template engine](#template-engines). After that, it performs additional operations using a [module](#modules).
+
+Take a look to de [basic example](#basic-example-jitl-core) and the [advanced example](#advanced-example-jitl-core-jtwig-template-engine-sql-module) in order to learn more.
+
+## Basic example (Jitl Core)
+```HtmlViews.java```:
 ```java
 package com.example;
 
@@ -28,13 +35,7 @@ public interface HtmlViews {
     String hello(@Param("username") String username);
 }
 ```
-
-By default, ```login()``` method will render the resource ```/com/example/html_views/login.tpl```, and ```hello(String)``` method will render the resource ```/com/example/html_views/hello.tpl```.
-+ Custom paths can be specified using annotations. See the [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
-+ Additional file extensions can be specified when building the ```Jitl``` instance. See [File Extensions](#file-extensions) section.
-
-Let's see the contents of ```hello.tpl```:
-
+```hello.tpl```:
 ```html
 <html>
     <head>
@@ -42,20 +43,24 @@ Let's see the contents of ```hello.tpl```:
     </head>
     <body>
         <p>Hello, $username!</p>
-        ...
     </body>
 </html>
 ```
-
-We can create a ```Jitl``` instance, which will allow us to get a ```HtmlViews``` instance:
-
+```Main.java```:
 ```java
-Jitl jitl = Jitl.builder().build();
-HtmlViews views = jitl.getInstance(HtmlViews.class);
-String renderedHtml = views.welcome("world");
+public class Main {
+    public static void main(String[] args) {
+        Jitl jitl = Jitl.builder().build();
+        HtmlViews views = jitl.getInstance(HtmlViews.class);
+        String renderedHtml = views.hello("world");
+    }
+}
 ```
+In this example, ```com.example.HtmlViews.login()``` method will render the resource ```/com/example/html_views/login.tpl```, and ```com.example.HtmlViews.hello(String)``` method will render the resource ```/com/example/html_views/hello.tpl```.
++ By default, resources can have **.tpl** or **.txt** extensions. Additional file extensions can be specified when building the ```Jitl``` instance. See [File Extensions](#file-extensions) section.
++ Custom resource paths can be specified using annotations. See [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
 
-When ```views.welcome("world")``` is called, the value of ```username``` parameter is passed to the template, and all the aparitions of ```$username``` are replaced by ```world```. The returned ```String``` is the result of the rendering process:
+When ```views.hello("world")``` is called, the value of ```username``` parameter is passed to the template, and all the aparitions of ```$username``` are replaced by ```world```. The returned ```String``` is the result of the rendering process.
 
 ```html
 <html>
@@ -64,12 +69,65 @@ When ```views.welcome("world")``` is called, the value of ```username``` paramet
     </head>
     <body>
         <p>Hello, world!</p>
-        ...
     </body>
 </html>
 ```
 
-The rendering behaviour can be changed using different *template engines* and *modules*. See the [Template Engines](#template-engines) and [Modules](#modules) sections.
+The rendering behaviour can be changed using different *template engines* and *modules*. See [Template Engines](#template-engines) and [Modules](#modules) sections.
+
+## Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)
+```UsersRepository.java```:
+```java
+package com.example;
+
+// imports...
+
+@UseModule(SQLModule.class)
+@BaseClasspath("/com/example/queries/users_")
+public interface UsersRepository {
+    List<User> findAllByType(String type, @Param("only_active") boolean onlyActiveUsers);
+}
+```
+```find_all_by_type.sql```:
+```sql
+SELECT * FROM users WHERE type = :type {% if(only_active) %} AND active = 1 {% endif %};
+```
+```Main.java```:
+```java
+public class Main {
+    public static void main(String[] args) {
+
+        Jitl jitl = Jitl.builder()
+            .setTemplateEngine(new JtwigTemplateEngine())
+            .addModule(SQLModule.builder().build())
+            .build();
+
+        UsersRepository repository = jitl.getInstance(UsersRepository.class);
+        List<User> users = repository.findAllByType("premium", true);
+
+    }
+}
+```
+In this example, ```com.example.UsersRepository.findAllByType(String, boolean)``` method will render the resource ```/com/example/queries/users_find_all_by_type.sql```.
++ See [File Extensions](#file-extensions) section.
++ See [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
+
+When ```repository.findAllByType("premium", true)``` is called, the value of ```type``` and ```onlyActiveUsers``` parameters are passed to the template. After executing ```JtwigTemplateEngine```, the result will be:
+
+```sql
+SELECT * FROM users WHERE type = :type AND active = 1;
+```
+
+Now, JITL is going to execute the ```SQLModule```. This module will execute the ```SELECT``` query on a database engine, and will transform the ```ResultSet``` into a ```List<User>```. The result will a Java list similar to:
+
+```json
+[
+    { username = "harry.potter", type = "premium", active = true },
+    { username = "tom.riddle", type = "premium", active = true },
+]
+```
+
+Learn more about [Jtwig Template Engine](https://github.com/nestorrente/jitl-jtwig-template-engine) and [SQL Module](https://github.com/nestorrente/jitl-sql-module).
 
 ## File Extensions
 
@@ -78,12 +136,18 @@ By default, JITL tries to find a resource template (i.e. ```/views/login```) wit
 When building a ```Jitl``` instance, additional file extensions can be defined. Let's see an example:
 
 ```java
+Collection<String> extensions = Arrays.asList("js", "css");
+
 Jitl jitl = Jitl.builder()
-    .build()
+    .addFileExtension("php")
+    .addFileExtensions("htm", "html")
+    .addFileExtensions(extensions)
     .build();
 ```
 
-Additionally, modules can define its own extensions (i.e., ```jitl-sql-module``` defines the **.sql** extension).
+Last added extensions have higher priority.
+
+Additionally, modules can define its own extensions (i.e., ```jitl-sql-module``` defines the **.sql** extension). Extensions defined by a module have the highest priority, but they are only used when invoking a method whose interface was associated with that module. See [Modules](#modules) and [@UseModule annotation](#usemodule-annotation).
 
 ## Template Engines
 
@@ -102,11 +166,9 @@ Other projects, like [```jitl-jtwig-template-engine```](https://github.com/nesto
 
 ## Modules
 
-```Module```s are objects that can define additional file extensions and can perform additional operations **after** the rendering process. Many ```Module```s can be used in a single ```Jitl``` instance.
+```Module```s are objects that can define additional file extensions and can perform additional operations **after** the rendering process (i.e. transform the result into another Java type). Many ```Module```s can be used in a single ```Jitl``` instance, but only one module can be used in each interface.
 
-By default, JITL uses a *no-operation* module that doesn't add any file extension and returns the contents generated by the template engine without performing any additional operation.
-
-Each interface can specify which ```Module``` would be used when invoking its methods. This can be done using the ```@UseModule``` annotation. See [@UseModule annotation](#usemodule-annotation).
+By default, JITL doesn't use any module. This means that no additional operations are performed after the rendering process. Each interface can use the ```@UseModule``` annotation in order to specify which ```Module``` would be used when invoking its methods. See [@UseModule annotation](#usemodule-annotation).
 
 Other projects, like [```jitl-sql-module```](https://github.com/nestorrente/jitl-sql-module) provide powerful modules, allowing to perform some background operations and transform the result to another Java object (i.e., execute a SQL query in a database and transform the ```ResultSet``` to a *POJO*).
 
