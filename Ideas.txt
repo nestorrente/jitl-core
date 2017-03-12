@@ -8,7 +8,7 @@ PRIORITARIO:
 - Comentar en inglés para subir a GitHub/Maven.
 - Añadir en el core un TemplateEngine que no haga nada? IdentityTemplateEngine?
 	- Simplemente para cargar archivos de texto y poder hacerles un post-procesado sin que se reemplace nada.
-- Crear un post-processor para JSON que utilice Gson. Simplemente pide un Gson y se le pueden poner las extensiones.
+- Crear un módulo para JSON que utilice Gson. Simplemente pide un Gson y se le pueden poner las extensiones.
 
 ---
 
