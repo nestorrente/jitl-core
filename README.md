@@ -1,5 +1,22 @@
 # Java Interface Template Library
 
+## Table of contents
++ **[What is JITL](#what-is-jitl)**
++ **[File Extensions](#file-extensions)**
++ **[Template Engines](#template-engines)**
++ **[Modules](#modules)**
++ **[Interface Annotations](#tnterface-annotations)**
+    + **[@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations)**
+        + **[@BaseClasspath](#baseclasspath)**
+        + **[@ClasspathTemplate](#classpathtemplate)**
+        + **[@InlineTemplate](#inlinetemplate)**
+    + **[@Param and @Params annotations](#param-and-params-annotations)**
+    + **[@UseModule annotation](#usemodule-annotation)**
++ **[Maven](#maven)**
++ **[Related projects](#related-projects)**
+
+## What is JITL?
+
 JITL is a library that makes the job of rendering templates as simple as invoking a method.
 When using JITL, you only have to define a Java interface and JITL will find your templates in your *resources* folder. Method parameters are passed to the template. Let's see an example:
 
@@ -13,7 +30,7 @@ public interface HtmlViews {
 ```
 
 By default, ```login()``` method will render the resource ```/com/example/html_views/login.tpl```, and ```hello(String)``` method will render the resource ```/com/example/html_views/hello.tpl```.
-+ Custom paths can be specified using annotations like ```@BaseClasspath```, ```@ClasspathTemplate```. See the [Interface Annotations](#interface-annotations) section.
++ Custom paths can be specified using annotations. See the [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
 + Additional file extensions can be specified when building the ```Jitl``` instance. See [File Extensions](#file-extensions) section.
 
 Let's see the contents of ```hello.tpl```:
@@ -191,6 +208,25 @@ package com.example;
 public interface DataAccess {
     List<User> getUsers();
 }
+```
+
+## Maven
+
+```xml
+<repositories>
+	<repository>
+		<id>jcenter</id>
+		<url>https://jcenter.bintray.com/</url>
+	</repository>
+</repositories>
+
+<dependencies>
+	<dependency>
+		<groupId>com.nestorrente</groupId>
+		<artifactId>jitl-core</artifactId>
+		<version>1.0.2</version>
+	</dependency>
+</dependencies>
 ```
 
 ## Related projects
