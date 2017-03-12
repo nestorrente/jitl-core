@@ -14,8 +14,8 @@ import com.nestorrente.jitl.annotation.ClasspathTemplate;
 import com.nestorrente.jitl.annotation.InlineTemplate;
 import com.nestorrente.jitl.annotation.Param;
 import com.nestorrente.jitl.annotation.Params;
-import com.nestorrente.jitl.annotation.PostProcessor;
-import com.nestorrente.jitl.postprocessor.JitlPostProcessor;
+import com.nestorrente.jitl.annotation.UseModule;
+import com.nestorrente.jitl.module.Module;
 import com.nestorrente.jitl.util.ReflectionUtils;
 import com.nestorrente.jitl.util.ResourceUtils;
 import com.nestorrente.jitl.util.StringUtils;
@@ -23,11 +23,11 @@ import com.nestorrente.jitl.util.StringUtils;
 // TODO refactor this class for doing unit-tests (i.e., a method that allows get the resource path of a class method)
 class JitlMethodInvocationHandler implements InvocationHandler {
 
-	private static final class FallbackPostProcessor extends JitlPostProcessor {
+	private static final class FallbackModule extends Module {
 
-		public static final FallbackPostProcessor INSTANCE = new FallbackPostProcessor();
+		public static final FallbackModule INSTANCE = new FallbackModule();
 
-		private FallbackPostProcessor() {
+		private FallbackModule() {
 			super(Collections.emptyList());
 		}
 
@@ -48,15 +48,15 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		Map<String, Object> parameters = this.getTemplateParameters(method, args);
 
-		JitlPostProcessor postProcessor = this.getPostProcessor(method);
+		Module module = this.getModule(method);
 
-		String renderedTemplate = this.renderTemplate(method, parameters, postProcessor);
+		String renderedTemplate = this.renderTemplate(method, parameters, module);
 
-		return postProcessor.postProcess(this.jitl, method, renderedTemplate, parameters);
+		return module.postProcess(this.jitl, method, renderedTemplate, parameters);
 
 	}
 
-	private String renderTemplate(Method method, Map<String, Object> parameters, JitlPostProcessor postProcessor) {
+	private String renderTemplate(Method method, Map<String, Object> parameters, Module module) {
 
 		// TODO don't allow @InlineTemplate and @Classpath template at the same time
 
@@ -72,7 +72,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 			return this.jitl.getTemplateEngine().renderResource(templateUri, parameters);
 		}
 
-		for(String extension : Iterables.concat(postProcessor.getFileExtensions(), this.jitl.getFileExtensions())) {
+		for(String extension : Iterables.concat(module.getFileExtensions(), this.jitl.getFileExtensions())) {
 
 			String templateUriWithExtension = templateUri + "." + extension;
 
@@ -87,26 +87,26 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 	}
 
-	private JitlPostProcessor getPostProcessor(Method method) {
+	private Module getModule(Method method) {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 
-		Optional<Class<? extends JitlPostProcessor>> postProcessorClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, PostProcessor.class, a -> a.value());
+		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, UseModule.class, a -> a.value());
 
-		if(!postProcessorClassOptional.isPresent()) {
-			return FallbackPostProcessor.INSTANCE;
+		if(!moduleClassOptional.isPresent()) {
+			return FallbackModule.INSTANCE;
 		}
 
-		Class<? extends JitlPostProcessor> postProcessorClass = postProcessorClassOptional.get();
+		Class<? extends Module> moduleClass = moduleClassOptional.get();
 
-		JitlPostProcessor postProcessor = this.jitl.getPostProcessor(postProcessorClass);
+		Module module = this.jitl.getModule(moduleClass);
 
-		if(postProcessor == null) {
+		if(module == null) {
 			// TODO replace with a custom exception
-			throw new RuntimeException("PostProcessor " + postProcessorClass.getName() + " is not registered in this " + Jitl.class.getSimpleName() + " instance");
+			throw new RuntimeException("Module " + moduleClass.getName() + " is not registered in this " + Jitl.class.getSimpleName() + " instance");
 		}
 
-		return postProcessor;
+		return module;
 
 	}
 

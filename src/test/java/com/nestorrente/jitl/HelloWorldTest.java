@@ -12,7 +12,7 @@ public class HelloWorldTest {
 	@BeforeClass
 	public static void createInstance() {
 
-		Jitl jitl = new JitlBuilder()
+		Jitl jitl = Jitl.builder()
 			.build();
 
 		INSTANCE = jitl.getInstance(HelloWorld.class);

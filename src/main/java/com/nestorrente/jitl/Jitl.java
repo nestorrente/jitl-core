@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.nestorrente.jitl.postprocessor.JitlPostProcessor;
+import com.nestorrente.jitl.module.Module;
 import com.nestorrente.jitl.template.TemplateEngine;
 
 // TODO Important: add case-converters (or path-converters) for allowing custom "class+method to filepath" transformation
@@ -24,9 +24,9 @@ public class Jitl {
 	private final Collection<String> fileExtensions;
 	private final Collection<String> unmodifiableFileExtensionsView;
 
-	private final Map<Class<? extends JitlPostProcessor>, JitlPostProcessor> postProcessors;
+	private final Map<Class<? extends Module>, Module> modules;
 
-	Jitl(TemplateEngine templateEngine, Collection<String> fileExtensions, Map<Class<? extends JitlPostProcessor>, JitlPostProcessor> postProcessors) {
+	Jitl(TemplateEngine templateEngine, Collection<String> fileExtensions, Map<Class<? extends Module>, Module> modules) {
 
 		this.templateEngine = templateEngine;
 
@@ -36,7 +36,7 @@ public class Jitl {
 
 		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(this.fileExtensions);
 
-		this.postProcessors = new HashMap<>(postProcessors);
+		this.modules = new HashMap<>(modules);
 
 	}
 
@@ -65,8 +65,8 @@ public class Jitl {
 		return this.unmodifiableFileExtensionsView;
 	}
 
-	JitlPostProcessor getPostProcessor(Class<? extends JitlPostProcessor> postProcessorClass) {
-		return this.postProcessors.get(postProcessorClass);
+	Module getModule(Class<? extends Module> moduleClass) {
+		return this.modules.get(moduleClass);
 	}
 
 }

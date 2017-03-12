@@ -12,7 +12,7 @@ public class HtmlTest {
 	@BeforeClass
 	public static void createInstance() {
 
-		Jitl jitl = new JitlBuilder()
+		Jitl jitl = Jitl.builder()
 			.addFileExtensions("htm", "html")
 			.build();
 

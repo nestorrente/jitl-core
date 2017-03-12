@@ -1,4 +1,4 @@
-package com.nestorrente.jitl.postprocessor;
+package com.nestorrente.jitl.module;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -8,12 +8,12 @@ import java.util.Map;
 
 import com.nestorrente.jitl.Jitl;
 
-public abstract class JitlPostProcessor {
+public abstract class Module {
 
 	private final Collection<String> fileExtensions;
 	private final Collection<String> unmodifiableFileExtensionsView;
 
-	public JitlPostProcessor(Collection<String> fileExtensions) {
+	public Module(Collection<String> fileExtensions) {
 		this.fileExtensions = new ArrayList<>(fileExtensions);
 		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(this.fileExtensions);
 	}

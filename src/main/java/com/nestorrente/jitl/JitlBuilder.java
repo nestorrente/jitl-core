@@ -9,7 +9,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.builder.Builder;
 
-import com.nestorrente.jitl.postprocessor.JitlPostProcessor;
+import com.nestorrente.jitl.module.Module;
 import com.nestorrente.jitl.template.DefaultTemplateEngine;
 import com.nestorrente.jitl.template.TemplateEngine;
 import com.nestorrente.jitl.util.ArrayUtils;
@@ -18,12 +18,12 @@ public class JitlBuilder implements Builder<Jitl> {
 
 	private TemplateEngine templateEngine;
 	private final List<String> fileExtensions;
-	private final Map<Class<? extends JitlPostProcessor>, JitlPostProcessor> postProcessors;
+	private final Map<Class<? extends Module>, Module> modules;
 
 	JitlBuilder() {
 		this.templateEngine = DefaultTemplateEngine.getInstance();
 		this.fileExtensions = new ArrayList<>();
-		this.postProcessors = new HashMap<>();
+		this.modules = new HashMap<>();
 	}
 
 	public JitlBuilder setTemplateEngine(TemplateEngine templateEngine) {
@@ -46,8 +46,8 @@ public class JitlBuilder implements Builder<Jitl> {
 		return this;
 	}
 
-	public JitlBuilder addPostProcessor(JitlPostProcessor postProcessor) {
-		this.postProcessors.put(postProcessor.getClass(), postProcessor);
+	public JitlBuilder addModule(Module module) {
+		this.modules.put(module.getClass(), module);
 		return this;
 	}
 
@@ -58,7 +58,7 @@ public class JitlBuilder implements Builder<Jitl> {
 
 		Collections.reverse(instanceFileExtensions);
 
-		return new Jitl(this.templateEngine, instanceFileExtensions, this.postProcessors);
+		return new Jitl(this.templateEngine, instanceFileExtensions, this.modules);
 
 	}
 
