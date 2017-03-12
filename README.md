@@ -3,7 +3,7 @@
 ## Table of contents
 + **[What is JITL](#what-is-jitl)**
 + **[Basic example (Jitl Core)](#basic-example-jitl-core)**
-+ **[Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)](#advanced-example-jitl-core-jtwig-template-engine-sql-module)**
++ **[Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)](#advanced-example-jitl-core--jtwig-template-engine--sql-module)**
 + **[File Extensions](#file-extensions)**
 + **[Template Engines](#template-engines)**
 + **[Modules](#modules)**
@@ -23,7 +23,7 @@ JITL is a library that makes the job of rendering templates as simple as invokin
 
 First, JITL renders the template using a [template engine](#template-engines). After that, it performs additional operations using a [module](#modules).
 
-Take a look to de [basic example](#basic-example-jitl-core) and the [advanced example](#advanced-example-jitl-core-jtwig-template-engine-sql-module) in order to learn more.
+Take a look to de [basic example](#basic-example-jitl-core) and the [advanced example](#advanced-example-jitl-core--jtwig-template-engine--sql-module) in order to learn more.
 
 ## Basic example (Jitl Core)
 ```HtmlViews.java```:
