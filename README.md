@@ -2,8 +2,8 @@
 
 ## Table of contents
 + **[What is JITL](#what-is-jitl)**
-+ **[Basic example](#basic-example)**
-+ **[Advanced example](#advanced-example)**
++ **[Basic example (Jitl Core)](#basic-example-jitl-core)**
++ **[Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)](#advanced-example-jitl-core-jtwig-template-engine-sql-module)**
 + **[File Extensions](#file-extensions)**
 + **[Template Engines](#template-engines)**
 + **[Modules](#modules)**
