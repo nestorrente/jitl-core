@@ -120,7 +120,7 @@ SELECT * FROM users WHERE type = :type AND active = 1;
 
 Now, JITL is going to execute the ```SQLModule```. This module will execute the ```SELECT``` query on a database engine, and will transform the ```ResultSet``` into a ```List<User>```. The result will a Java list similar to:
 
-```json
+```java
 [
     { username = "harry.potter", type = "premium", active = true },
     { username = "tom.riddle", type = "premium", active = true },
