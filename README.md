@@ -26,16 +26,16 @@ First, JITL renders the template using a [template engine](#template-engines). A
 Take a look to de [basic example](#basic-example-jitl-core) and the [advanced example](#advanced-example-jitl-core--jtwig-template-engine--sql-module) in order to learn more.
 
 ## Basic example (Jitl Core)
-```HtmlViews.java```:
+**HtmlViews.java:**
 ```java
 package com.example;
 
 public interface HtmlViews {
     String login();
-    String hello(@Param("username") String username);
+    String welcome(@Param("username") String username);
 }
 ```
-```hello.tpl```:
+**welcome.tpl:**
 ```html
 <html>
     <head>
@@ -46,22 +46,21 @@ public interface HtmlViews {
     </body>
 </html>
 ```
-```Main.java```:
+**Main.java:**
 ```java
 public class Main {
     public static void main(String[] args) {
         Jitl jitl = Jitl.builder().build();
         HtmlViews views = jitl.getInstance(HtmlViews.class);
-        String renderedHtml = views.hello("world");
+        String renderedHtml = views.welcome("world");
     }
 }
 ```
-In this example, ```com.example.HtmlViews.login()``` method will render the resource ```/com/example/html_views/login.tpl```, and ```com.example.HtmlViews.hello(String)``` method will render the resource ```/com/example/html_views/hello.tpl```.
+In this example, ```com.example.HtmlViews.login()``` method will render the resource ```/com/example/html_views/login.tpl```, and ```com.example.HtmlViews.welcome(String)``` method will render the resource ```/com/example/html_views/welcome.tpl```.
 + By default, resources can have **.tpl** or **.txt** extensions. Additional file extensions can be specified when building the ```Jitl``` instance. See [File Extensions](#file-extensions) section.
 + Custom resource paths can be specified using annotations. See [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
 
-When ```views.hello("world")``` is called, the value of ```username``` parameter is passed to the template, and all the aparitions of ```$username``` are replaced by ```world```. The returned ```String``` is the result of the rendering process.
-
+When ```views.welcome("world")``` is called, the value of ```username``` parameter is passed to the template, and all the aparitions of ```$username``` are replaced by ```world```. The returned ```String``` is the result of the rendering process.
 ```html
 <html>
     <head>
@@ -72,11 +71,12 @@ When ```views.hello("world")``` is called, the value of ```username``` parameter
     </body>
 </html>
 ```
-
 The rendering behaviour can be changed using different *template engines* and *modules*. See [Template Engines](#template-engines) and [Modules](#modules) sections.
 
 ## Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)
-```UsersRepository.java```:
+**NOTE:** This example uses [Jtwig Template Engine](https://github.com/nestorrente/jitl-jtwig-template-engine) and [SQL Module](https://github.com/nestorrente/jitl-sql-module).
+
+**UsersRepository.java:**
 ```java
 package com.example;
 
@@ -88,11 +88,11 @@ public interface UsersRepository {
     List<User> findAllByType(String type, @Param("only_active") boolean onlyActiveUsers);
 }
 ```
-```find_all_by_type.sql```:
+**find_all_by_type.sql:**
 ```sql
 SELECT * FROM users WHERE type = :type {% if(only_active) %} AND active = 1 {% endif %};
 ```
-```Main.java```:
+**Main.java:**
 ```java
 public class Main {
     public static void main(String[] args) {
@@ -193,7 +193,7 @@ package com.example;
 @BaseClasspath("/views/")
 public interface HtmlViews {
     String login();
-    String hello(@Param("username") String username);
+    String welcome(@Param("username") String username);
 }
 ```
 In example 1, ```login()``` method will rended the resource ```/views/login.tpl```.
@@ -204,7 +204,7 @@ package com.example;
 @BaseClasspath("/web/view_")
 public interface HtmlViews {
     String login();
-    String hello(@Param("username") String username);
+    String welcome(@Param("username") String username);
 }
 ```
 In example 2, ```login()``` method will rended the resource ```/web/view_login.tpl```.
@@ -222,12 +222,12 @@ public interface HtmlViews {
     @ClasspathTemplate("login_form")
     String login();
 
-    @ClasspathTemplate("/views/hello")
-    String hello(@Param("username") String username);
+    @ClasspathTemplate("/views/welcome")
+    String welcome(@Param("username") String username);
 
 }
 ```
-In the above example, ```login()``` method will rended the resource ```/com/example/html_views/login_form.tpl``` and ```hello(String)``` method will rended the resource ```/views/hello.tpl```.
+In the above example, ```login()``` method will rended the resource ```/com/example/html_views/login_form.tpl``` and ```welcome(String)``` method will rended the resource ```/views/welcome.tpl```.
 
 #### @InlineTemplate
 
@@ -254,7 +254,7 @@ public interface HtmlViews {
     String pageHeader(@Param("username") String user, @Param("title") String title);
 
     @Params({"username", "msg"})
-    String hello(String username, String additionalMessage);
+    String welcome(String username, String additionalMessage);
 
 }
 ```
