@@ -2,10 +2,13 @@ package com.nestorrente.jitl.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.commons.io.IOUtils;
 
 public class ResourceUtils {
 
@@ -28,27 +31,59 @@ public class ResourceUtils {
 		return ResourceUtils.class.getResource(ensureAbsoluteUri(uri)) != null;
 	}
 
-	public static URL getResource(String uri) throws IOException {
+	public static InputStream getResourceAsStream(String uri) {
 
-		URL is = ResourceUtils.class.getResource(ensureAbsoluteUri(uri));
+		InputStream is = ResourceUtils.class.getResourceAsStream(ensureAbsoluteUri(uri));
 
 		if(is == null) {
-			throw new IOException("Resource " + uri + " not found in classpath");
+			// TODO replace with a custom exception (RuntimeIOException?)
+			throw new RuntimeException("Resource " + uri + " not found in classpath");
 		}
 
 		return is;
 
 	}
 
-	public static InputStream getResourceAsStream(String uri) throws IOException {
+	public static String getResourceContents(String uri, Charset charset) {
+		try(InputStream is = getResourceAsStream(uri)) {
+			return IOUtils.toString(is, charset);
+		} catch(IOException ex) {
+			// TODO replace with a custom exception (RuntimeIOException?)
+			throw new RuntimeException("I/O error ocurred while reading the resource", ex);
+		}
+	}
+
+	/**
+	 * Method created in order to avoid double opening and closing when using {@link #resourceExists(String)} followed by {@link #getResourceContents(String, Charset)}.
+	 *
+	 * @param uri Classpath URI of the resource
+	 * @param charset Resource encoding
+	 * @return Resource contents if resource exists; {@code Optional.empty()} otherwise.
+	 */
+	public static Optional<String> getResourceContentsIfExists(String uri, Charset charset) {
 
 		InputStream is = ResourceUtils.class.getResourceAsStream(ensureAbsoluteUri(uri));
 
 		if(is == null) {
-			throw new IOException("Resource " + uri + " not found in classpath");
+			return Optional.empty();
 		}
 
-		return is;
+		try {
+
+			return Optional.of(IOUtils.toString(is, charset));
+
+		} catch(IOException ex) {
+
+			// TODO replace with a custom exception (RuntimeIOException?)
+			throw new RuntimeException("I/O error ocurred while reading the resource", ex);
+
+		} finally {
+
+			try {
+				is.close();
+			} catch(IOException ignored) {}
+
+		}
 
 	}
 

@@ -15,7 +15,7 @@ import com.google.common.reflect.TypeToken;
 public class ReflectionUtils {
 
 	public static boolean isArray(Object obj) {
-		return obj.getClass().isArray();
+		return obj != null && obj.getClass().isArray();
 	}
 
 	public static <T> boolean addAllFromArray(Collection<T> collection, Object array) {
@@ -76,18 +76,27 @@ public class ReflectionUtils {
 		for(Class<?> current = clazz.getSuperclass(); current != null; current = current.getSuperclass()) {
 			try {
 				return current.getDeclaredField(name);
-			} catch(NoSuchFieldException ignore) {}
+			} catch(NoSuchFieldException ignored) {}
 		}
 
 		throw firstException;
 
 	}
 
-	public static void setField(Object obj, Field field, Object value) {
+	public static Object getFieldValue(Object obj, Field field) {
+		try {
+			field.setAccessible(true);
+			return field.get(obj);
+		} catch(IllegalAccessException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public static void setFieldValue(Object obj, Field field, Object value) {
 		try {
 			field.setAccessible(true);
 			field.set(obj, value);
-		} catch(IllegalArgumentException | IllegalAccessException ex) {
+		} catch(IllegalAccessException ex) {
 			throw new RuntimeException(ex);
 		}
 	}

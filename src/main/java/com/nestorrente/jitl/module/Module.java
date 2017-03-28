@@ -22,15 +22,6 @@ public abstract class Module {
 		return this.unmodifiableFileExtensionsView;
 	}
 
-	public Object postProcess(Jitl jitl, Method method, String renderedTemplate, Map<String, Object> parameters) throws Exception {
-
-		if(!String.class.equals(method.getReturnType())) {
-			// TODO replace with a custom exception
-			throw new IllegalArgumentException("Cannot transform template result to " + method.getGenericReturnType().getTypeName());
-		}
-
-		return renderedTemplate;
-
-	}
+	public abstract Object postProcess(Jitl jitl, Method method, String renderedTemplate, Map<String, Object> parameters) throws Exception;
 
 }

@@ -3,6 +3,8 @@ package com.nestorrente.jitl;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +13,7 @@ import java.util.Optional;
 import com.google.common.collect.Iterables;
 import com.nestorrente.jitl.annotation.BaseClasspath;
 import com.nestorrente.jitl.annotation.ClasspathTemplate;
+import com.nestorrente.jitl.annotation.Encoding;
 import com.nestorrente.jitl.annotation.InlineTemplate;
 import com.nestorrente.jitl.annotation.Param;
 import com.nestorrente.jitl.annotation.Params;
@@ -29,6 +32,18 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		private FallbackModule() {
 			super(Collections.emptyList());
+		}
+
+		@Override
+		public Object postProcess(Jitl jitl, Method method, String renderedTemplate, Map<String, Object> parameters) throws Exception {
+
+			if(!String.class.equals(method.getReturnType())) {
+				// TODO replace with a custom exception
+				throw new IllegalArgumentException("Cannot transform template result to " + method.getGenericReturnType().getTypeName());
+			}
+
+			return renderedTemplate;
+
 		}
 
 	}
@@ -66,24 +81,12 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 			return this.jitl.getTemplateEngine().renderString(inlineAnnotation.get().value(), parameters);
 		}
 
+		Charset templateCharset = this.getTemplateCharset(method);
 		String templateUri = this.getTemplateUri(method);
 
-		if(ResourceUtils.resourceExists(templateUri)) {
-			return this.jitl.getTemplateEngine().renderResource(templateUri, parameters);
-		}
+		String templateContents = this.getTemplateContents(templateUri, templateCharset, module.getFileExtensions());
 
-		for(String extension : Iterables.concat(module.getFileExtensions(), this.jitl.getFileExtensions())) {
-
-			String templateUriWithExtension = templateUri + "." + extension;
-
-			if(ResourceUtils.resourceExists(templateUriWithExtension)) {
-				return this.jitl.getTemplateEngine().renderResource(templateUriWithExtension, parameters);
-			}
-
-		}
-
-		// TODO replace with a custom exception
-		throw new RuntimeException("Resource not found: " + templateUri);
+		return this.jitl.getTemplateEngine().renderString(templateContents, parameters);
 
 	}
 
@@ -91,7 +94,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 
-		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, UseModule.class, a -> a.value());
+		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, UseModule.class, UseModule::value);
 
 		if(!moduleClassOptional.isPresent()) {
 			return FallbackModule.INSTANCE;
@@ -110,6 +113,35 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 	}
 
+	private String getTemplateContents(String templateUri, Charset templateCharset, Collection<String> moduleFileExtensions) {
+
+		Optional<String> contents = ResourceUtils.getResourceContentsIfExists(templateUri, templateCharset);
+
+		if(contents.isPresent()) {
+			return contents.get();
+		}
+
+		for(String extension : Iterables.concat(moduleFileExtensions, this.jitl.getFileExtensions())) {
+
+			String templateUriWithExtension = templateUri + "." + extension;
+
+			contents = ResourceUtils.getResourceContentsIfExists(templateUriWithExtension, templateCharset);
+
+			if(contents.isPresent()) {
+				return contents.get();
+			}
+
+		}
+
+		// TODO replace with a custom exception
+		throw new RuntimeException("Resource not found: " + templateUri);
+
+	}
+
+	private Charset getTemplateCharset(Method method) {
+		return ReflectionUtils.getAnnotationValue(method, Encoding.class, Encoding::value).map(Charset::forName).orElseGet(Charset::defaultCharset);
+	}
+
 	private String getTemplateUri(Method method) {
 
 		Class<?> declaringClass = method.getDeclaringClass();
@@ -117,7 +149,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 		String baseClasspathUri = ReflectionUtils.getAnnotationValue(declaringClass, BaseClasspath.class, a -> ResourceUtils.ensureAbsoluteUri(a.value()))
 			.orElseGet(() -> ResourceUtils.packageOrClassNameToUri(declaringClass.getName()));
 
-		String templateUri = ReflectionUtils.getAnnotationValue(method, ClasspathTemplate.class, a -> a.value())
+		String templateUri = ReflectionUtils.getAnnotationValue(method, ClasspathTemplate.class, ClasspathTemplate::value)
 			.orElseGet(() -> StringUtils.camelToLowerUnderscore(method.getName()));
 
 		if(templateUri.charAt(0) != '/') {
@@ -132,7 +164,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		// TODO don't allow using @Params and @Param at the same time
 
-		Optional<String[]> paramsAnnotationValues = ReflectionUtils.getAnnotationValue(method, Params.class, a -> a.value());
+		Optional<String[]> paramsAnnotationValues = ReflectionUtils.getAnnotationValue(method, Params.class, Params::value);
 
 		if(paramsAnnotationValues.isPresent() && method.getParameterCount() != paramsAnnotationValues.get().length) {
 			// TODO replace with a custom exception
@@ -145,7 +177,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		for(Parameter param : method.getParameters()) {
 
-			Optional<String> paramAnnotationValue = ReflectionUtils.getAnnotationValue(param, Param.class, a -> a.value());
+			Optional<String> paramAnnotationValue = ReflectionUtils.getAnnotationValue(param, Param.class, Param::value);
 
 			String name;
 
