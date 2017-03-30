@@ -5,12 +5,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.nestorrente.jitl.module.Module;
-
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface UseModule {
+public @interface Module {
 
-	Class<? extends Module> value();
+	Class<? extends com.nestorrente.jitl.module.Module> value();
 
 }

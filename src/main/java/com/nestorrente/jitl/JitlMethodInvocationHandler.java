@@ -17,7 +17,6 @@ import com.nestorrente.jitl.annotation.Encoding;
 import com.nestorrente.jitl.annotation.InlineTemplate;
 import com.nestorrente.jitl.annotation.Param;
 import com.nestorrente.jitl.annotation.Params;
-import com.nestorrente.jitl.annotation.UseModule;
 import com.nestorrente.jitl.module.Module;
 import com.nestorrente.jitl.util.ReflectionUtils;
 import com.nestorrente.jitl.util.ResourceUtils;
@@ -94,7 +93,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 
-		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, UseModule.class, UseModule::value);
+		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, com.nestorrente.jitl.annotation.Module.class, com.nestorrente.jitl.annotation.Module::value);
 
 		if(!moduleClassOptional.isPresent()) {
 			return FallbackModule.INSTANCE;
