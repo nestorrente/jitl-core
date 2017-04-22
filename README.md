@@ -5,6 +5,7 @@
 + **[Basic example (Jitl Core)](#basic-example-jitl-core)**
 + **[Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)](#advanced-example-jitl-core--jtwig-template-engine--sql-module)**
 + **[File Extensions](#file-extensions)**
++ **[Encoding](#encoding)**
 + **[Template Engines](#template-engines)**
 + **[Modules](#modules)**
 + **[Interface Annotations](#tnterface-annotations)**
@@ -50,7 +51,7 @@ public interface HtmlViews {
 ```java
 public class Main {
     public static void main(String[] args) {
-        Jitl jitl = Jitl.builder().build();
+        Jitl jitl = Jitl.defaultInstance();
         HtmlViews views = jitl.getInstance(HtmlViews.class);
         String renderedHtml = views.welcome("world");
     }
@@ -88,7 +89,7 @@ public interface UsersRepository {
     List<User> findAllByType(String type, @Param("only_active") boolean onlyActiveUsers);
 }
 ```
-**find_all_by_type.sql:**
+**users_find_all_by_type.sql:**
 ```sql
 SELECT * FROM users WHERE type = :type {% if(only_active) %} AND active = 1 {% endif %};
 ```
@@ -97,13 +98,17 @@ SELECT * FROM users WHERE type = :type {% if(only_active) %} AND active = 1 {% e
 public class Main {
     public static void main(String[] args) {
 
-        Jitl jitl = Jitl.builder()
-            .setTemplateEngine(new JtwigTemplateEngine())
-            .addModule(SQLModule.builder().build())
-            .build();
+        try(Connection connection = /* ... */) {
 
-        UsersRepository repository = jitl.getInstance(UsersRepository.class);
-        List<User> users = repository.findAllByType("premium", true);
+	        Jitl jitl = Jitl.builder()
+	            .setTemplateEngine(new JtwigTemplateEngine())
+	            .addModule(SQLModule.defaultInstance(connection))
+	            .build();
+	
+	        UsersRepository repository = jitl.getInstance(UsersRepository.class);
+	        List<User> users = repository.findAllByType("premium", true);
+
+        }
 
     }
 }
@@ -149,13 +154,30 @@ Last added extensions have higher priority.
 
 Additionally, modules can define its own extensions (i.e., ```jitl-sql-module``` defines the **.sql** extension). Extensions defined by a module have the highest priority, but they are only used when invoking a method whose interface was associated with that module. See [Modules](#modules) and [@UseModule annotation](#usemodule-annotation).
 
+## Encoding
+
+In order to specify the character set of the template files, JITL interfaces can be annotated with ```@Engine``` annotation. This annotation receives a ```String``` representing the name of a character set. Let's see an example:
+
+**HtmlViews.java:**
+```java
+package com.example;
+
+@Encoding("UTF-8")
+public interface HtmlViews {
+    String login();
+    String welcome(@Param("username") String username);
+}
+```
+
+Internally, JITL uses the method [```Charset.forName(String charsetName)```](https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html#forName-java.lang.String-) for getting the corresponding ```Charset``` instance. When ```@Encoding``` is not present, [```Charset.defaultCharset()```](https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html#defaultCharset--) is used.
+
 ## Template Engines
 
 A ```TemplateEngine``` is the object responsible of the rendering process. Only one ```TemplateEngine``` can be used in a single ```Jitl``` instance.
 
 By default, JITL uses a simple template engine that replaces variables like ```$param``` with the value of the ```param``` parameter of the method. ```jitl-core``` project also provides a *no-operation* template engine that doesn't make any replacement, returning the original template contents.
 
-JITL template engine can be changed invoking ```setTemplateEngine(TemplateEngine)``` from the ```JitlBuilder``` class:
+JITL template engine can be changed invoking ```setTemplateEngine(TemplateEngine)``` from the ```JitlBuilder``` class. For example, JITL also includes a ```NoOpTemplateEngine``` that doesn't perform any render operation:
 ```java
 Jitl jitl = Jitl.builder()
     .setTemplateEngine(NoOpTemplateEngine.getInstance())
@@ -174,7 +196,7 @@ By default, JITL doesn't use any module. This means that no additional operation
 
 You can define your own ```Module```s by extending [```com.nestorrente.jitl.module.Module```](src/main/java/com/nestorrente/jitl/module/Module.java) class.
 
-Other projects, like [```jitl-sql-module```](https://github.com/nestorrente/jitl-sql-module) provide powerful modules, allowing to perform some background operations and transform the result to another Java object (i.e., execute a SQL query in a database and transform the ```ResultSet``` to a *POJO*).
+Other projects, like [```jitl-sql-module```](https://github.com/nestorrente/jitl-sql-module) provide powerful modules, allowing to perform some background operations and transform the result to another Java object (i.e., execute a SQL query in a database and transform the ```ResultSet``` into a *POJO*).
 
 ## Interface Annotations
 There are some annotations that can be used to change the default template path, the parameters names, etc.
@@ -249,7 +271,7 @@ public interface HtmlViews {
 
 ### @Param and @Params annotations
 
-By default, Java doesn't store the parameters names in .class files. Java code can be compiled using ```javac``` command with ```-parameters``` argument. However, you can specify parameters names using ```@Param``` and ```@Params``` annotations.
+By default, Java doesn't store the parameters names in ```.class``` files. Java code can be compiled using ```javac``` command with ```-parameters``` argument. However, you can specify parameters names using ```@Param``` and ```@Params``` annotations.
 ```java
 package com.example;
 
@@ -290,7 +312,7 @@ public interface DataAccess {
 	<dependency>
 		<groupId>com.nestorrente</groupId>
 		<artifactId>jitl-core</artifactId>
-		<version>2.0.0</version>
+		<version>4.0.0</version>
 	</dependency>
 </dependencies>
 ```

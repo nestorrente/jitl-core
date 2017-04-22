@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,35 +16,15 @@ import com.nestorrente.jitl.annotation.Encoding;
 import com.nestorrente.jitl.annotation.InlineTemplate;
 import com.nestorrente.jitl.annotation.Param;
 import com.nestorrente.jitl.annotation.Params;
+import com.nestorrente.jitl.annotation.UseModule;
 import com.nestorrente.jitl.module.Module;
+import com.nestorrente.jitl.module.NoOpModule;
 import com.nestorrente.jitl.util.ReflectionUtils;
 import com.nestorrente.jitl.util.ResourceUtils;
 import com.nestorrente.jitl.util.StringUtils;
 
 // TODO refactor this class for doing unit-tests (i.e., a method that allows get the resource path of a class method)
 class JitlMethodInvocationHandler implements InvocationHandler {
-
-	private static final class FallbackModule extends Module {
-
-		public static final FallbackModule INSTANCE = new FallbackModule();
-
-		private FallbackModule() {
-			super(Collections.emptyList());
-		}
-
-		@Override
-		public Object postProcess(Jitl jitl, Method method, String renderedTemplate, Map<String, Object> parameters) throws Exception {
-
-			if(!String.class.equals(method.getReturnType())) {
-				// TODO replace with a custom exception
-				throw new IllegalArgumentException("Cannot transform template result to " + method.getGenericReturnType().getTypeName());
-			}
-
-			return renderedTemplate;
-
-		}
-
-	}
 
 	@SuppressWarnings("unused")
 	private final Class<?> interfaze; // TODO cache the post-processor for every method?
@@ -93,10 +72,11 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 
-		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, com.nestorrente.jitl.annotation.Module.class, com.nestorrente.jitl.annotation.Module::value);
+		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, UseModule.class, UseModule::value);
 
 		if(!moduleClassOptional.isPresent()) {
-			return FallbackModule.INSTANCE;
+			// We use the no-operation module by default
+			return NoOpModule.INSTANCE;
 		}
 
 		Class<? extends Module> moduleClass = moduleClassOptional.get();

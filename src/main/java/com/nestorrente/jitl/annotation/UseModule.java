@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Module {
+public @interface UseModule {
 
 	Class<? extends com.nestorrente.jitl.module.Module> value();
 

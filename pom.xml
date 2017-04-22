@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.nestorrente</groupId>
 	<artifactId>jitl-core</artifactId>
-	<version>3.0.0</version>
+	<version>4.0.0</version>
 	<name>Java Interface Template Library</name>
 	<description>An interface-oriented template engine library for Java.</description>
 

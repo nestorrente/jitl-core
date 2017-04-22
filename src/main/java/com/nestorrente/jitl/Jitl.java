@@ -15,13 +15,8 @@ import com.nestorrente.jitl.template.TemplateEngine;
 // TODO create more post-processors and template engines
 public class Jitl {
 
-	public static JitlBuilder builder() {
-		return new JitlBuilder();
-	}
-
 	private final TemplateEngine templateEngine;
 
-	private final Collection<String> fileExtensions;
 	private final Collection<String> unmodifiableFileExtensionsView;
 
 	private final Map<Class<? extends Module>, Module> modules;
@@ -30,11 +25,12 @@ public class Jitl {
 
 		this.templateEngine = templateEngine;
 
-		this.fileExtensions = new ArrayList<>(fileExtensions);
-		this.fileExtensions.add("txt");
-		this.fileExtensions.add("tpl");
+		// TODO rethink this variable
+		Collection<String> fileExtensionsCopy = new ArrayList<>(fileExtensions);
+		fileExtensionsCopy.add("txt");
+		fileExtensionsCopy.add("tpl");
 
-		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(this.fileExtensions);
+		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(fileExtensionsCopy);
 
 		this.modules = new HashMap<>(modules);
 
@@ -65,8 +61,23 @@ public class Jitl {
 		return this.unmodifiableFileExtensionsView;
 	}
 
-	Module getModule(Class<? extends Module> moduleClass) {
-		return this.modules.get(moduleClass);
+	<M extends Module> M getModule(Class<M> moduleClass) {
+
+		@SuppressWarnings("unchecked")
+		M module = (M) this.modules.get(moduleClass);
+
+		return module;
+
+	}
+
+	/* Build methods */
+
+	public static JitlBuilder builder() {
+		return new JitlBuilder();
+	}
+
+	public static Jitl defaultInstance() {
+		return builder().build();
 	}
 
 }
