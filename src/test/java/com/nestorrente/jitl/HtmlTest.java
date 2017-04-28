@@ -38,6 +38,15 @@ public class HtmlTest {
 
 	}
 
+	@Test
+	public void emptyClasspathAnnotationHasNoEffect() {
+
+		String message = INSTANCE.footer();
+
+		assertEquals("<div>This is the page footer.</div>", message);
+
+	}
+
 	@Test(expected = RuntimeException.class)
 	public void notFoundThrowsRuntimeException() {
 		INSTANCE.notFound();

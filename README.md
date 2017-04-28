@@ -255,6 +255,23 @@ public interface HtmlViews {
 ```
 In the above example, ```login()``` method will rended the resource ```/com/example/html_views/login_form.tpl``` and ```welcome(String)``` method will rended the resource ```/views/welcome.tpl```.
 
+Using this annotation without an specific value has no effect. The following examples are equivalent:
+```java
+package com.example;
+
+public interface HtmlViews {
+    String login();
+}
+```
+```java
+package com.example;
+
+public interface HtmlViews {
+	@ClasspathTemplate
+    String login();
+}
+```
+
 #### @InlineTemplate
 
 This annotation can be used in order to specify an inline template instead of a resource file.

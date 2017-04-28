@@ -129,6 +129,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 			.orElseGet(() -> ResourceUtils.packageOrClassNameToUri(declaringClass.getName()));
 
 		String templateUri = ReflectionUtils.getAnnotationValue(method, ClasspathTemplate.class, ClasspathTemplate::value)
+			.filter(s -> !s.isEmpty())
 			.orElseGet(() -> StringUtils.camelToLowerUnderscore(method.getName()));
 
 		if(templateUri.charAt(0) != '/') {

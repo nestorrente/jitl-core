@@ -16,6 +16,9 @@ public interface Html {
 
 	String header(@Param("text") String arg);
 
+	@ClasspathTemplate
+	String footer();
+
 	String notFound();
 
 }
