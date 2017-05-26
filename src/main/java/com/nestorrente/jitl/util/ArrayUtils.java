@@ -16,4 +16,15 @@ public class ArrayUtils {
 
 	}
 
+	public static void main(String[] args) {
+
+		int[] pepe = { 3, 4 };
+		Integer[] pepito = { 3, 4 };
+
+		Object oPepe = pepe;
+		System.out.println(oPepe instanceof Object[]);
+		System.out.println(pepito instanceof Object[]);
+
+	}
+
 }

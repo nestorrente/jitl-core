@@ -13,9 +13,9 @@ public class StringUtils {
 
 	public static String camelToLowerUnderscore(String camel) {
 
-		// FIXME for some unknown reason, passing String::toLowerCase to PatternUtils.replace(...) is "ambiguous" for Maven compiler
-
 		// MySQLQuery -> MySqlQuery
+		// FIXME for some unknown reason, passing String::toLowerCase to PatternUtils.replace(...) is "ambiguous" for Maven compiler
+		// String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, String::toLowerCase);
 		String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, str -> str.toLowerCase());
 
 		// MySqlQuery -> My_Sql_Query

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import com.nestorrente.jitl.Jitl;
+import com.nestorrente.jitl.exception.TransformationException;
 
 public class NoOpModule extends Module {
 
@@ -18,8 +19,7 @@ public class NoOpModule extends Module {
 	public Object postProcess(Jitl jitl, Method method, String renderedTemplate, Map<String, Object> parameters) throws Exception {
 
 		if(!String.class.equals(method.getReturnType())) {
-			// TODO replace with a custom exception
-			throw new IllegalArgumentException("Cannot transform template result to " + method.getGenericReturnType().getTypeName());
+			throw new TransformationException("Cannot transform template result to " + method.getGenericReturnType().getTypeName());
 		}
 
 		return renderedTemplate;

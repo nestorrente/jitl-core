@@ -152,7 +152,7 @@ Jitl jitl = Jitl.builder()
 
 Last added extensions have higher priority.
 
-Additionally, modules can define its own extensions (i.e., ```jitl-sql-module``` defines the **.sql** extension). Extensions defined by a module have the highest priority, but they are only used when invoking a method whose interface was associated with that module. See [Modules](#modules) and [@UseModule annotation](#usemodule-annotation).
+Additionally, modules can define its own extensions (i.e., [SQL Module](https://github.com/nestorrente/jitl-sql-module) defines the **.sql** extension). Extensions defined by a module have the highest priority, but they are only used when invoking a method whose interface was associated with that module. See [Modules](#modules) and [@UseModule annotation](#usemodule-annotation).
 
 ## Encoding
 

@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 
+import com.nestorrente.jitl.exception.RuntimeIOException;
+
 public class ResourceUtils {
 
 	public static final String FOLDER_SEPARATOR = "/";
@@ -36,8 +38,7 @@ public class ResourceUtils {
 		InputStream is = ResourceUtils.class.getResourceAsStream(ensureAbsoluteUri(uri));
 
 		if(is == null) {
-			// TODO replace with a custom exception (RuntimeIOException?)
-			throw new RuntimeException("Resource " + uri + " not found in classpath");
+			throw new RuntimeIOException("Resource " + uri + " not found in classpath");
 		}
 
 		return is;
@@ -48,8 +49,7 @@ public class ResourceUtils {
 		try(InputStream is = getResourceAsStream(uri)) {
 			return IOUtils.toString(is, charset);
 		} catch(IOException ex) {
-			// TODO replace with a custom exception (RuntimeIOException?)
-			throw new RuntimeException("I/O error ocurred while reading the resource", ex);
+			throw new RuntimeIOException("I/O error ocurred while reading the resource", ex);
 		}
 	}
 
@@ -74,8 +74,7 @@ public class ResourceUtils {
 
 		} catch(IOException ex) {
 
-			// TODO replace with a custom exception (RuntimeIOException?)
-			throw new RuntimeException("I/O error ocurred while reading the resource", ex);
+			throw new RuntimeIOException("I/O error ocurred while reading the resource", ex);
 
 		} finally {
 

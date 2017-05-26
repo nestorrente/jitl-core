@@ -9,6 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Iterables;
 import com.nestorrente.jitl.annotation.BaseClasspath;
 import com.nestorrente.jitl.annotation.ClasspathTemplate;
@@ -17,6 +20,10 @@ import com.nestorrente.jitl.annotation.InlineTemplate;
 import com.nestorrente.jitl.annotation.Param;
 import com.nestorrente.jitl.annotation.Params;
 import com.nestorrente.jitl.annotation.UseModule;
+import com.nestorrente.jitl.exception.MissingParameterNameException;
+import com.nestorrente.jitl.exception.RuntimeIOException;
+import com.nestorrente.jitl.exception.UnregisteredModuleException;
+import com.nestorrente.jitl.exception.WrongAnnotationUseException;
 import com.nestorrente.jitl.module.Module;
 import com.nestorrente.jitl.module.NoOpModule;
 import com.nestorrente.jitl.util.ReflectionUtils;
@@ -25,6 +32,8 @@ import com.nestorrente.jitl.util.StringUtils;
 
 // TODO refactor this class for doing unit-tests (i.e., a method that allows get the resource path of a class method)
 class JitlMethodInvocationHandler implements InvocationHandler {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(JitlMethodInvocationHandler.class);
 
 	@SuppressWarnings("unused")
 	private final Class<?> interfaze; // TODO cache the post-processor for every method?
@@ -54,13 +63,20 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 		// TODO don't allow @InlineTemplate and @Classpath template at the same time
 
 		Optional<InlineTemplate> inlineAnnotation = ReflectionUtils.getAnnotation(method, InlineTemplate.class);
+		Optional<ClasspathTemplate> classpathAnnotation = ReflectionUtils.getAnnotation(method, ClasspathTemplate.class);
 
 		if(inlineAnnotation.isPresent()) {
+
+			if(classpathAnnotation.isPresent()) {
+				throw new WrongAnnotationUseException(String.format("Cannot use @%s and @%s annotations at the same time", InlineTemplate.class.getSimpleName(), ClasspathTemplate.class.getSimpleName()));
+			}
+
 			return this.jitl.getTemplateEngine().renderString(inlineAnnotation.get().value(), parameters);
+
 		}
 
 		Charset templateCharset = this.getTemplateCharset(method);
-		String templateUri = this.getTemplateUri(method);
+		String templateUri = this.getTemplateUri(method, classpathAnnotation);
 
 		String templateContents = this.getTemplateContents(templateUri, templateCharset, module.getFileExtensions());
 
@@ -75,8 +91,12 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 		Optional<Class<? extends Module>> moduleClassOptional = ReflectionUtils.getAnnotationValue(declaringClass, UseModule.class, UseModule::value);
 
 		if(!moduleClassOptional.isPresent()) {
+
+			LOGGER.warn("@UseModule not present; using No-Operation module by default");
+
 			// We use the no-operation module by default
 			return NoOpModule.INSTANCE;
+
 		}
 
 		Class<? extends Module> moduleClass = moduleClassOptional.get();
@@ -84,8 +104,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 		Module module = this.jitl.getModule(moduleClass);
 
 		if(module == null) {
-			// TODO replace with a custom exception
-			throw new RuntimeException("Module " + moduleClass.getName() + " is not registered in this " + Jitl.class.getSimpleName() + " instance");
+			throw new UnregisteredModuleException("Module " + moduleClass.getName() + " is not registered in this " + Jitl.class.getSimpleName() + " instance");
 		}
 
 		return module;
@@ -112,23 +131,30 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 
 		}
 
-		// TODO replace with a custom exception
-		throw new RuntimeException("Resource not found: " + templateUri);
+		throw new RuntimeIOException("Resource not found: " + templateUri);
 
 	}
 
 	private Charset getTemplateCharset(Method method) {
-		return ReflectionUtils.getAnnotationValue(method, Encoding.class, Encoding::value).map(Charset::forName).orElseGet(Charset::defaultCharset);
+
+		Optional<String> encoding = ReflectionUtils.getAnnotationValue(method, Encoding.class, Encoding::value);
+
+		if(!encoding.isPresent()) {
+			encoding = ReflectionUtils.getAnnotationValue(method.getDeclaringClass(), Encoding.class, Encoding::value);
+		}
+
+		return encoding.map(Charset::forName).orElseGet(Charset::defaultCharset);
+
 	}
 
-	private String getTemplateUri(Method method) {
+	private String getTemplateUri(Method method, Optional<ClasspathTemplate> classpathAnnotation) {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 
 		String baseClasspathUri = ReflectionUtils.getAnnotationValue(declaringClass, BaseClasspath.class, a -> ResourceUtils.ensureAbsoluteUri(a.value()))
 			.orElseGet(() -> ResourceUtils.packageOrClassNameToUri(declaringClass.getName()));
 
-		String templateUri = ReflectionUtils.getAnnotationValue(method, ClasspathTemplate.class, ClasspathTemplate::value)
+		String templateUri = classpathAnnotation.map(ClasspathTemplate::value)
 			.filter(s -> !s.isEmpty())
 			.orElseGet(() -> StringUtils.camelToLowerUnderscore(method.getName()));
 
@@ -147,8 +173,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 		Optional<String[]> paramsAnnotationValues = ReflectionUtils.getAnnotationValue(method, Params.class, Params::value);
 
 		if(paramsAnnotationValues.isPresent() && method.getParameterCount() != paramsAnnotationValues.get().length) {
-			// TODO replace with a custom exception
-			throw new RuntimeException("@Params annotation must specify the name of all parameters");
+			throw new WrongAnnotationUseException(String.format("@%s annotation must specify the name of all parameters", Params.class.getSimpleName()));
 		}
 
 		Map<String, Object> templateParameters = new HashMap<>();
@@ -174,8 +199,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 				name = param.getName();
 
 			} else {
-				// TODO replace with a custom exception
-				throw new RuntimeException("Cannot infer parameter name: " + param.toString());
+				throw new MissingParameterNameException("Cannot infer parameter name: " + param.toString());
 			}
 
 			templateParameters.put(name, args[paramIndex]);
