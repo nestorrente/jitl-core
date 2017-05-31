@@ -152,7 +152,7 @@ class JitlMethodInvocationHandler implements InvocationHandler {
 		Class<?> declaringClass = method.getDeclaringClass();
 
 		String baseClasspathUri = ReflectionUtils.getAnnotationValue(declaringClass, BaseClasspath.class, a -> ResourceUtils.ensureAbsoluteUri(a.value()))
-			.orElseGet(() -> ResourceUtils.packageOrClassNameToUri(declaringClass.getName()));
+			.orElseGet(() -> ResourceUtils.packageOrClassNameToUri(declaringClass.getCanonicalName()));
 
 		String templateUri = classpathAnnotation.map(ClasspathTemplate::value)
 			.filter(s -> !s.isEmpty())
