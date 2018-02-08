@@ -1,20 +1,24 @@
 # Java Interface Template Library
 
+<aside class="notice">
+This library is currently on development. Please, don't use it in production environments. Stable version 4.0.0 comming soon.
+</aside>
+
 ## Table of contents
 + **[What is JITL](#what-is-jitl)**
 + **[Basic example (Jitl Core)](#basic-example-jitl-core)**
-+ **[Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)](#advanced-example-jitl-core--jtwig-template-engine--sql-module)**
++ **[Advanced example (Jitl Core + Jtwig Template Engine + SQL Processor)](#advanced-example-jitl-core--jtwig-template-engine--sql-processor)**
 + **[File Extensions](#file-extensions)**
 + **[Encoding](#encoding)**
 + **[Template Engines](#template-engines)**
-+ **[Modules](#modules)**
++ **[Processors](#processors)**
 + **[Interface Annotations](#tnterface-annotations)**
     + **[@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations)**
         + **[@BaseClasspath](#baseclasspath)**
         + **[@ClasspathTemplate](#classpathtemplate)**
         + **[@InlineTemplate](#inlinetemplate)**
     + **[@Param and @Params annotations](#param-and-params-annotations)**
-    + **[@UseModule annotation](#usemodule-annotation)**
+    + **[@UseProcessor annotation](#useprocessor-annotation)**
 + **[Maven](#maven)**
 + **[Related projects](#related-projects)**
 
@@ -22,9 +26,9 @@
 
 JITL is a library that makes the job of rendering templates as simple as invoking a method. Using JITL, you only have to define a Java interface and JITL will find your template files in your *resources* folder. Method parameters are accessible within the template.
 
-First, JITL renders the template using a [template engine](#template-engines). After that, it performs additional operations using a [module](#modules).
+First, JITL renders the template using a [template engine](#template-engines). After that, it performs additional operations using a [processor](#processors).
 
-Take a look to de [basic example](#basic-example-jitl-core) and the [advanced example](#advanced-example-jitl-core--jtwig-template-engine--sql-module) in order to learn more.
+Take a look to de [basic example](#basic-example-jitl-core) and the [advanced example](#advanced-example-jitl-core--jtwig-template-engine--sql-processor) in order to learn more.
 
 ## Basic example (Jitl Core)
 **HtmlViews.java:**
@@ -72,10 +76,10 @@ When ```views.welcome("world")``` is called, the value of ```username``` paramet
     </body>
 </html>
 ```
-The rendering behaviour can be changed using different *template engines* and *modules*. See [Template Engines](#template-engines) and [Modules](#modules) sections.
+The rendering behaviour can be changed using different *template engines* and *processors*. See [Template Engines](#template-engines) and [Processors](#processors) sections.
 
-## Advanced example (Jitl Core + Jtwig Template Engine + SQL Module)
-**NOTE:** This example uses [Jtwig Template Engine](https://github.com/nestorrente/jitl-jtwig-template-engine) and [SQL Module](https://github.com/nestorrente/jitl-sql-module).
+## Advanced example (Jitl Core + Jtwig Template Engine + SQL Processor)
+**NOTE:** This example uses [Jtwig Template Engine](https://github.com/nestorrente/jitl-jtwig-template-engine) and [SQL Processor](https://github.com/nestorrente/jitl-sql-processor).
 
 **UsersRepository.java:**
 ```java
@@ -83,7 +87,7 @@ package com.example;
 
 // imports...
 
-@UseModule(SQLModule.class)
+@UseProcessor(SQLProcessor.class)
 @BaseClasspath("/com/example/queries/users_")
 public interface UsersRepository {
     List<User> findAllByType(String type, @Param("only_active") boolean onlyActiveUsers);
@@ -102,7 +106,7 @@ public class Main {
 
 	        Jitl jitl = Jitl.builder()
 	            .setTemplateEngine(new JtwigTemplateEngine())
-	            .addModule(SQLModule.defaultInstance(connection))
+	            .addProcessor(SQLProcessor.defaultInstance(connection))
 	            .build();
 	
 	        UsersRepository repository = jitl.getInstance(UsersRepository.class);
@@ -117,22 +121,26 @@ In this example, ```com.example.UsersRepository.findAllByType(String, boolean)``
 + See [File Extensions](#file-extensions) section.
 + See [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
 
-When ```repository.findAllByType("premium", true)``` is called, the value of ```type``` and ```onlyActiveUsers``` parameters are passed to the template. After executing ```JtwigTemplateEngine```, the result will be:
+When ```repository.findAllByType("premium", true)``` is called, the value of ```type``` and ```onlyActiveUsers``` parameters are passed into the template engine renamed as ```type``` and ```only_active``` (as specified by the ```@Param``` annotation). After executing ```JtwigTemplateEngine```, the result will be:
 
 ```sql
 SELECT * FROM users WHERE type = :type AND active = 1;
 ```
 
-Now, JITL is going to execute the ```SQLModule```. This module will execute the ```SELECT``` query on a database engine, and will transform the ```ResultSet``` into a ```List<User>```. The result will a Java list similar to:
+Now, JITL is going to execute the ```SQLProcessor```. This processor will execute the ```SELECT``` query on a database engine, and will transform the ```ResultSet``` into a ```List<User>```.
 
-```java
+Notice that processors can also access parameter values also. ```SQLProcessor``` will use a JDBC ```PreparedStatement``` in order to pass the ```:type``` parameter value into the query.
+
+The result of the execution will be a Java ```List<User>``` corresponding to the following JSON structure:
+
+```json
 [
-    { username = "harry.potter", type = "premium", active = true },
-    { username = "tom.riddle", type = "premium", active = true },
+    { "username": "harry.potter", "type": "premium", "active": true },
+    { "username": "tom.riddle", "type": "premium", "active": true }
 ]
 ```
 
-Learn more about [Jtwig Template Engine](https://github.com/nestorrente/jitl-jtwig-template-engine) and [SQL Module](https://github.com/nestorrente/jitl-sql-module).
+Learn more about [Jtwig Template Engine](https://github.com/nestorrente/jitl-jtwig-template-engine) and [SQL Processor](https://github.com/nestorrente/jitl-sql-processor).
 
 ## File Extensions
 
@@ -152,11 +160,11 @@ Jitl jitl = Jitl.builder()
 
 Last added extensions have higher priority.
 
-Additionally, modules can define its own extensions (i.e., [SQL Module](https://github.com/nestorrente/jitl-sql-module) defines the **.sql** extension). Extensions defined by a module have the highest priority, but they are only used when invoking a method whose interface was associated with that module. See [Modules](#modules) and [@UseModule annotation](#usemodule-annotation).
+Additionally, processors can define its own extensions (i.e., [SQL Processor](https://github.com/nestorrente/jitl-sql-processor) defines the **.sql** extension). Extensions defined by a processor have the highest priority, but they are only used when invoking a method whose interface was associated with that processor. See [Processors](#processors) and [@UseProcessor annotation](#useprocessor-annotation).
 
 ## Encoding
 
-In order to specify the character set of the template files, JITL interfaces can be annotated with ```@Engine``` annotation. This annotation receives a ```String``` representing the name of a character set. Let's see an example:
+In order to specify the character set of the template files, JITL interfaces can be annotated with ```@Encoding``` annotation. This annotation receives a ```String``` representing the name of a character set. Let's see an example:
 
 **HtmlViews.java:**
 ```java
@@ -177,7 +185,7 @@ A ```TemplateEngine``` is the object responsible of the rendering process. Only 
 
 By default, JITL uses a simple template engine that replaces variables like ```$param``` with the value of the ```param``` parameter of the method. ```jitl-core``` project also provides a *no-operation* template engine that doesn't make any replacement, returning the original template contents.
 
-JITL template engine can be changed invoking ```setTemplateEngine(TemplateEngine)``` from the ```JitlBuilder``` class. For example, JITL also includes a ```NoOpTemplateEngine``` that doesn't perform any render operation:
+JITL template engine can be changed using the ```setTemplateEngine(TemplateEngine)``` method from the ```JitlBuilder``` class. For example, this is how we tell JITL to use the built-in *no-operation* template engine:
 ```java
 Jitl jitl = Jitl.builder()
     .setTemplateEngine(NoOpTemplateEngine.getInstance())
@@ -188,15 +196,15 @@ You can define your own ```TemplateEngine```s by implementing [```com.nestorrent
 
 Other projects, like [```jitl-jtwig-template-engine```](https://github.com/nestorrente/jitl-jtwig-template-engine) provide thirty-party powerful template engines.
 
-## Modules
+## Processors
 
-```Module```s are objects that can define additional file extensions and can perform additional operations **after** the rendering process (i.e. transform the result into another Java type). Many ```Module```s can be used in a single ```Jitl``` instance, but only one module can be used in each interface.
+```Processor```s are objects that can define additional file extensions and can perform additional operations **after** the rendering process (i.e. transform the result into another Java type). Many ```Processor```s can be used in a single ```Jitl``` instance, but only one processor can be used in each interface.
 
-By default, JITL doesn't use any module. This means that no additional operations are performed after the rendering process. Each interface can use the ```@UseModule``` annotation in order to specify which ```Module``` would be used when invoking its methods. See [@UseModule annotation](#usemodule-annotation).
+By default, JITL doesn't use any processor. This means that no additional operations are performed after the rendering process. Each interface can use the ```@UseProcessor``` annotation in order to specify which ```Processor``` would be used when invoking its methods. See [@UseProcessor annotation](#useprocessor-annotation).
 
-You can define your own ```Module```s by extending [```com.nestorrente.jitl.module.Module```](src/main/java/com/nestorrente/jitl/module/Module.java) class.
+You can define your own ```Processor```s by extending [```com.nestorrente.jitl.processor.Processor```](src/main/java/com/nestorrente/jitl/processor/Processor.java) class.
 
-Other projects, like [```jitl-sql-module```](https://github.com/nestorrente/jitl-sql-module) provide powerful modules, allowing to perform some background operations and transform the result to another Java object (i.e., execute a SQL query in a database and transform the ```ResultSet``` into a *POJO*).
+Other projects, like [```jitl-sql-processor```](https://github.com/nestorrente/jitl-sql-processor) provide powerful processors, allowing to perform some background operations and transform the result to another Java object (i.e., execute a SQL query in a database and transform the ```ResultSet``` into a *POJO*).
 
 ## Interface Annotations
 There are some annotations that can be used to change the default template path, the parameters names, etc.
@@ -235,7 +243,7 @@ public interface HtmlViews {
 ```
 In example 2, ```login()``` method will rended the resource ```/web/view_login.tpl```.
 
-**Note:** the class base-path is always absolute. This means that ```@BaseClasspath("/views/")``` and ```@BaseClasspath("views/")``` are the same path.
+**Note:** the class base-path is always absolute. This means that ```@BaseClasspath("/views/")``` and ```@BaseClasspath("views/")``` refer to the same path.
 
 #### @ClasspathTemplate
 
@@ -267,7 +275,7 @@ public interface HtmlViews {
 package com.example;
 
 public interface HtmlViews {
-	@ClasspathTemplate
+    @ClasspathTemplate
     String login();
 }
 ```
@@ -288,7 +296,7 @@ public interface HtmlViews {
 
 ### @Param and @Params annotations
 
-By default, Java doesn't store the parameters names in ```.class``` files. Java code can be compiled using ```javac``` command with ```-parameters``` argument. However, you can specify parameters names using ```@Param``` and ```@Params``` annotations.
+By default, Java doesn't store the parameters names in ```.class``` files. Java code can be compiled using ```javac``` command with ```-parameters``` argument in order to preserve parameter names in ```.class``` file. However, you can specify your own parameters names using ```@Param``` and ```@Params``` annotations.
 ```java
 package com.example;
 
@@ -303,13 +311,13 @@ public interface HtmlViews {
 ```
 When any of these annotations is present, original parameters names are ignored.
 
-### @UseModule annotation
+### @UseProcessor annotation
 
-Interfaces must be annotated with @UseModule in order to specify which module must be used when invoking its methods. Only one module can be used at the same time. When this annotation is not present, JITL doesn't use any module.
+Interfaces must be annotated with ```@UseProcessor``` in order to specify which processor must be used after the rendering process when invoking its methods. Only one processor can be used at the same time. When this annotation is not present, JITL doesn't use any processor.
 ```java
 package com.example;
 
-@UseModule(SQLModule.class)
+@UseProcessor(SQLProcessor.class)
 public interface DataAccess {
     List<User> getUsers();
 }
@@ -336,4 +344,4 @@ public interface DataAccess {
 
 ## Related projects
 + [```jitl-jtwig-template-engine```](https://github.com/nestorrente/jitl-jtwig-template-engine)
-+ [```jitl-sql-module```](https://github.com/nestorrente/jitl-sql-module)
++ [```jitl-sql-processor```](https://github.com/nestorrente/jitl-sql-processor)

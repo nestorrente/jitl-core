@@ -1,9 +1,10 @@
 package com.nestorrente.jitl;
 
-import static org.junit.Assert.assertEquals;
-
+import com.nestorrente.jitl.cache.CacheStrategy;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class HtmlTest {
 
@@ -13,8 +14,9 @@ public class HtmlTest {
 	public static void createInstance() {
 
 		Jitl jitl = Jitl.builder()
-			.addFileExtensions("htm", "html")
-			.build();
+				.addFileExtensions("htm", "html")
+				.setCacheStrategy(CacheStrategy.CONTENTS)
+				.build();
 
 		INSTANCE = jitl.getInstance(Html.class);
 

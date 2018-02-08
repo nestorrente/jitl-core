@@ -1,10 +1,10 @@
 package com.nestorrente.jitl.exception;
 
-public class UnregisteredModuleException extends RuntimeException {
+public class UnregisteredProcessorException extends RuntimeException {
 
 	private static final long serialVersionUID = -3022278389348878455L;
 
-	public UnregisteredModuleException(String message) {
+	public UnregisteredProcessorException(String message) {
 		super(message);
 	}
 

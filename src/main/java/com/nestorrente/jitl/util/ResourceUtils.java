@@ -1,5 +1,8 @@
 package com.nestorrente.jitl.util;
 
+import com.nestorrente.jitl.exception.RuntimeIOException;
+import org.apache.commons.io.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -8,13 +11,9 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
-
-import com.nestorrente.jitl.exception.RuntimeIOException;
-
 public class ResourceUtils {
 
-	public static final String FOLDER_SEPARATOR = "/";
+	private static final String FOLDER_SEPARATOR = "/";
 
 	private static final Pattern PACKAGE_SPLIT_PATTERN = Pattern.compile("\\.");
 
@@ -56,7 +55,7 @@ public class ResourceUtils {
 	/**
 	 * Method created in order to avoid double opening and closing when using {@link #resourceExists(String)} followed by {@link #getResourceContents(String, Charset)}.
 	 *
-	 * @param uri Classpath URI of the resource
+	 * @param uri     Classpath URI of the resource
 	 * @param charset Resource encoding
 	 * @return Resource contents if resource exists; {@code Optional.empty()} otherwise.
 	 */
@@ -80,7 +79,8 @@ public class ResourceUtils {
 
 			try {
 				is.close();
-			} catch(IOException ignored) {}
+			} catch(IOException ignored) {
+			}
 
 		}
 

@@ -3,8 +3,8 @@ package com.nestorrente.jitl;
 import com.nestorrente.jitl.annotation.BaseClasspath;
 import com.nestorrente.jitl.annotation.ClasspathTemplate;
 import com.nestorrente.jitl.annotation.Encoding;
-import com.nestorrente.jitl.annotation.Param;
-import com.nestorrente.jitl.annotation.Params;
+import com.nestorrente.jitl.annotation.param.Param;
+import com.nestorrente.jitl.annotation.param.Params;
 
 @BaseClasspath("com/nestorrente/jitl/html_views/")
 @Encoding("UTF-8")

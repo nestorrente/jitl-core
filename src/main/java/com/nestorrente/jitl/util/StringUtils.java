@@ -1,6 +1,7 @@
 package com.nestorrente.jitl.util;
 
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class StringUtils {
@@ -14,9 +15,7 @@ public class StringUtils {
 	public static String camelToLowerUnderscore(String camel) {
 
 		// MySQLQuery -> MySqlQuery
-		// FIXME for some unknown reason, passing String::toLowerCase to PatternUtils.replace(...) is "ambiguous" for Maven compiler
-		// String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, String::toLowerCase);
-		String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, str -> str.toLowerCase());
+		String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, (Function<String, String>) String::toLowerCase);
 
 		// MySqlQuery -> My_Sql_Query
 		result = CAMMEL_CASE_SEPARATOR_PATTERN.matcher(result).replaceAll("_");

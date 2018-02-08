@@ -1,14 +1,86 @@
+README:
+- Añadir información sobre los ParamProvider.
+	- Y cómo funciona Cacheable sobre ellos.
+- Añadir información sobre Cacheable.
+
 PRIORITARIO:
+- Hacer que cada instancia de interfaz creada por JITL sea un singleton.
 - Cambiar los tests a HSQLDB para no depender de ninguna base de datos externa.
 	- Adaptar aquellos que no son compatibles con HSQLDB.
 		- Muchos se utilizaban para probar cosas de Jtwig; habría que separar dichas funcionalidades.
-			- El proyecto jitl-jtwig-sql-module-tests podría dejar de tener sentido.
+			- El proyecto jitl-jtwig-sql-processor-tests podría dejar de tener sentido.
 	- Revisar que los tests estén bien hechos.
 	- Leer: https://tillias.wordpress.com/2012/11/10/unit-testing-and-integration-testing-using-junit-liquibase-hsqldb-hibernate-maven-and-spring-framework/
 - Comentar en inglés para subir a GitHub/Maven.
-- Añadir en el core un TemplateEngine que no haga nada? IdentityTemplateEngine?
 	- Simplemente para cargar archivos de texto y poder hacerles un post-procesado sin que se reemplace nada.
-- Crear un módulo para JSON que utilice Gson. Simplemente pide un Gson y se le pueden poner las extensiones.
+- Crear un procesador para JSON que utilice Gson. Simplemente pide un Gson (o GsonBuilder) y se le pueden poner las extensiones.
+- REVISAR LA NOTA "Tareas GitHub" de Google Keep.
+
+NUEVAS IDEAS (01/02/2018):
+- Crear anotaciones @AdditionalParam (o @AdditionalStringParam?), @AdditionalIntParam, @AdditionalBooleanParam, etc.
+	- Y sus equivalentes en plural para usar con @Repeatable.
+	- Éstas anotaciones permitirán añadir parámetros constantes al template sin que se le tengan que pasar
+	  como argumentos del método.
+	- Era bueno buscar nombres más cortos.
+	- Problema: Hay que hacer una por cada tipo de dato, y aún por encima otra por cada uno de ellos para que sea @Repeatable.
+		- Quizá sea mejor descartarlo en favor de los Provider.
+- Crear una anotación @ParamProviders que permita especificar uno o varios proveedores de parámetros.
+	- Se podrá especificar un nombre (los providers se podrán registrar en JITL por nombre) o su clase.
+		- ACTUALIZACIÓN 07/02/2018: se descarta el uso por nombre. Siempre por clase.
+		- BUG!! Ahora mismo los providers que se auto-instancian con su uso están funcionando mal.
+			- Se instancian cada vez que se necesitan (deberían instanciarse y registrarse la primera vez).
+			- No se comprueba si son cacheables.
+				- Crear un método de utilidades isCacheable(AnnotatedElement)?
+					- ¿En AnnotationUtils o en una nueva, tipo CacheableUtils?
+		- Cuando van por clase, ¿es necesario igualmente que estén registrados en JITL?
+			- En caso de que sea así, debería permitirse registrarlos sin nombre también (de forma anónima).
+		- Sino, tendrá que instanciarse por Reflection. Esto me gusta menos.
+		- Si en un futuro hacemos una extensión o algo similar que permita integrarse con Spring,
+		  los ParamProvider podrían registrarse automáticamente (con el nombre del Bean de Spring
+		  aquellos que lo tengan, y sin nombre el resto)
+- Permitir más de un TemplateEngine? De la misma forma que se admiten varios procesadores/procesadores.
+	- Se podría definir uno por defecto (inicialmente, NoOpTemplateEngine) y tener una anotación
+	  estilo @UseTemplateEngine en las interfaces.
+		- La anotación @UseTemplateEngine sería a nivel de clase, pero... ¿también de método?
+			- No le veo sentido, al igual que no lo hicimos con los procesadores.
+- Si se permiten varios TemplateEngine pero se permite establecer uno por defecto,
+	- ¿Y permitir @UseProcessor a nivel de método? Opino que tampoco tiene sentido (como no lo tiene en @UseTemplateEngine).
+  debería permitirse también establecer un procesador/procesador por defecto.
+- Dar opciones en el procesador de SQL para crear transformers de entrada, además de los de salida?
+	- Ahora mismo los transformers son para los getters del ResultSet. Pues lo mismo, pero para los setters del PreparedStatement.
+- Buscar otro nombre a JITL y darle una vuelta completa a la implementación para poder sacar una versión 1 completa.
+	- Más que nada, porque verisón 4 o 5 queda feo. Realmente las primeras versiones deberían haber
+	  sido alphas o betas, ya que hubo cambios constantemente.
+- ¿Adaptar la forma de hacer caché (CacheManager y demás) para que se utilice CacheableResult?
+	- Para ello habría que adaptar CacheableResult para que acepte parámetros en su llamada,
+	  pero esto haría que dejase de ser un Supplier. Darle una vuelta con calma.
+- Permitir especificar los tipos de datos de SQL de los parámetros mediante anotaciones @SQLType y @SQLTypes?
+	- ¿Y escalas? Para los BigDecimal y así parece necesario.
+
+--- Locuras ---
+
+- Permitir obtener los contenidos de otro lugar, que no sean únicamente @InlineTemplate, @ClasspathTemplate, etc.
+	- Se podrían definir anotaciones, anotadas estas a su vez con algo que indique qué clase utilizar
+	  para obtener los contenidos de la plantilla.
+		- @InlineTemplate y @ClasspathTemplate tendrían que adaptarse para funcionar de esta misma manera.
+	- Esto es interesante para permitir que los contenidos se lean de una Base de Datos, por ejemplo.
+	- OJO: esto rompería con la caché de JITL a nivel de URI (los contenidos sí se podrían cachear).
+		- Salvo que encontremos alguna forma decente de que se permitan tipos de caché dependientes de cada "content supplier".
+- ¿Crear una clase que guarde toda la información que se lee del Method de la interfaz? Algo así como MethodInfo?
+- Permitir la extensión de JITL.
+	- Las extensiones modificarían la clase MethodInfo, añadiendo o modificando propiedades.
+	- El caché se podría implementar como una extensión, si se hace correctamente.
+	- Los parámetros adicionales (por ahora, solo con @ParamProvider) se podrían implementar como una extensión.
+
+--- Hecho o descartado ---
+
+✓ Cambiar el concepto de "módulo" por "procesador", y el método "postProcess" por "process".
+	✓ El diagrama quedaría así:
+		Template string ---template-engine--> Rendered string ---processor--> <T> / void
+		(los processors pueden convertir el resultado a otro tipo, o simplemente realizar alguna acción y no devolver nada)
+
+✓ Añadir en el core un TemplateEngine que no haga nada? IdentityTemplateEngine?
+	✓ Finalmente se ha llamado NoOpTemplateEngine.
 
 ---
 
@@ -17,7 +89,7 @@ PRIORITARIO:
 ✓ Los adapters devuelven el Transformer? Creo que mejor, deberían seguir devolviendo el executor.
 ✓ Un executor por cada método? Sí, tendría sentido, por los adapter (van por tipo de retorno del método).
 ✓ Ver, si se hacen para cosas que no sean SQL, tiene sentido que el Executor reciba la conexión en el constructor y no en el método execute().
-	✓ Solventado haciendo que la conexión sea algo propio del módulo de SQL.
+	✓ Solventado haciendo que la conexión sea algo propio del procesador de SQL.
 ✓ Ver, entonces, cómo gestionar los executors. Uno por método e invocation handler?
 
 ✗ QueryUtilities? No lo veo
@@ -25,19 +97,19 @@ PRIORITARIO:
 ---
 
 ✗ Como ya se dijo, existirá un único QueryExecutor, y QueryExecutors será una clase que provea de varios executors con transformers predeterminados.
-	✓ Ya no existe QueryExecutor, pero existe un método del módulo SQL que hace uso de los transformers para ejecutar una consulta.
+	✓ Ya no existe QueryExecutor, pero existe un método del procesador SQL que hace uso de los transformers para ejecutar una consulta.
 ✗ Esto será la librería de SQL Templates. --> repensar si realmente tiene sentido esa librería por separado. Los transformers "potentes" necesitarán hacer uso de los transformers delegados.
 	✓ La existencia de esta librería por separado se ha descartado.
 ✓ Después estará la librería de Interface Templates, que será para todo tipo de templates.
 	✓ Es Jitl en sí misma.
-✗ Existirán unos módulos, que serán algo así como Module<T extends Transformer>, que recibirán un T que será la clase base transformadora del resultado al tipo de retorno de los métodos de la interfaz.
-	✓ Los módulos no necesariamente van a necesitar transformers, puesto que pueden ser módulos que acepten unos tipos muy concretos. Debido a esto, los transformers son exclusivos del módulo de SQL.
-✓ El module tendrá los métodos de registro de los transformers (hasta ahora se registraban executors).
-✓ El SQLModule creará un QueryExecutor con el transformer correspondiente.
-~ Los módulos tendrán un pre-render y un post-render (necesitamos el post para reemplazar los :parameter en las SQL), que recibirán también los parámetros.
+✗ Existirán unos procesadores, que serán algo así como Processor<T extends Transformer>, que recibirán un T que será la clase base transformadora del resultado al tipo de retorno de los métodos de la interfaz.
+	✓ Los procesadores no necesariamente van a necesitar transformers, puesto que pueden ser procesadores que acepten unos tipos muy concretos. Debido a esto, los transformers son exclusivos del procesador de SQL.
+✓ El processor tendrá los métodos de registro de los transformers (hasta ahora se registraban executors).
+✓ El SQLProcessor creará un QueryExecutor con el transformer correspondiente.
+~ Los procesadores tendrán un pre-render y un post-render (necesitamos el post para reemplazar los :parameter en las SQL), que recibirán también los parámetros.
 	✓ Ahora tienen un post-process, pero no les metimos un pre-process todavía. ¿Es realmente necesario? ¿Tiene sentido? 
 ✓ Aislar JTwig, de modo que se pueda utilizar cualquier tipo de librería de plantillas creando un Adapter. El Adapter de JTwig ya lo ofrecemos por defecto.
-	✓ Diferentes librerías de plantillas por módulo? Yo diría que no, que creen varias instancias de Jitl si se quieren usar varias librerías. Obligamos, incluso, a ser más organizados y que la instancia de Jitl no se convierta en un cajón de sastre donde se usa de todo.
+	✓ Diferentes librerías de plantillas por procesador? Yo diría que no, que creen varias instancias de Jitl si se quieren usar varias librerías. Obligamos, incluso, a ser más organizados y que la instancia de Jitl no se convierta en un cajón de sastre donde se usa de todo.
 
 ---
 
@@ -55,4 +127,4 @@ Nombre: Jitl (Java Interface Template Library)
 ---
 
 LO ANTES POSIBLE:
-✓ Refactorizar la separación de paquetes para orientarla a los módulos. Separar las clases/interfaces genéricas de las del módulo.
+✓ Refactorizar la separación de paquetes para orientarla a los procesadores. Separar las clases/interfaces genéricas de las del procesador.

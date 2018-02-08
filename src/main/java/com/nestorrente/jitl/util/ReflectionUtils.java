@@ -1,18 +1,16 @@
 package com.nestorrente.jitl.util;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
+import com.google.common.reflect.TypeToken;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
-import java.util.Optional;
-import java.util.function.Function;
-
-import com.google.common.reflect.TypeToken;
 
 public class ReflectionUtils {
+
+	// TODO separate annotation methods to an AnnotationUtils class?
 
 	public static boolean isArray(Object obj) {
 		return obj != null && obj.getClass().isArray();
@@ -41,18 +39,6 @@ public class ReflectionUtils {
 
 	}
 
-	public static <A extends Annotation> Optional<A> getAnnotation(AnnotatedElement annotatedElement, Class<A> annotationClass) {
-		return annotatedElement.isAnnotationPresent(annotationClass) ? Optional.of(annotatedElement.getAnnotationsByType(annotationClass)[0]) : Optional.empty();
-	}
-
-	public static <A extends Annotation, T> Optional<T> getAnnotationValue(AnnotatedElement annotatedElement, Class<A> annotationClass, Function<A, T> valueGetter) {
-
-		Optional<A> annotation = getAnnotation(annotatedElement, annotationClass);
-
-		return annotation.isPresent() ? Optional.of(valueGetter.apply(annotation.get())) : Optional.empty();
-
-	}
-
 	public static <T> TypeToken<?> getSuperclassTypeArgument(TypeToken<? extends T> typeToken, Class<T> superclass, int typeArgumentIndex) {
 
 		TypeToken<?> superclassTypeToken = typeToken.getSupertype(superclass);
@@ -76,7 +62,8 @@ public class ReflectionUtils {
 		for(Class<?> current = clazz.getSuperclass(); current != null; current = current.getSuperclass()) {
 			try {
 				return current.getDeclaredField(name);
-			} catch(NoSuchFieldException ignored) {}
+			} catch(NoSuchFieldException ignored) {
+			}
 		}
 
 		throw firstException;

@@ -11,7 +11,7 @@ public class NoOpTemplateEngine implements TemplateEngine {
 	}
 
 	@Override
-	public String renderString(String templateContents, Map<String, Object> parameters) {
+	public String render(String templateContents, Map<String, Object> parameters) {
 		return templateContents;
 	}
 

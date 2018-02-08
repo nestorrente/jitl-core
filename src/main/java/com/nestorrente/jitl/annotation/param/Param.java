@@ -1,14 +1,14 @@
-package com.nestorrente.jitl.annotation;
+package com.nestorrente.jitl.annotation.param;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface UseModule {
+public @interface Param {
 
-	Class<? extends com.nestorrente.jitl.module.Module> value();
+	String value();
 
 }

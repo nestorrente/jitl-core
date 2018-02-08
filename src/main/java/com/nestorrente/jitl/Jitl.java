@@ -1,14 +1,19 @@
 package com.nestorrente.jitl;
 
-import java.lang.reflect.Proxy;
+import com.nestorrente.jitl.cache.CacheManager;
+import com.nestorrente.jitl.cache.CacheStrategy;
+import com.nestorrente.jitl.param.ParamProviderRegister;
+import com.nestorrente.jitl.processor.Processor;
+import com.nestorrente.jitl.template.TemplateEngine;
+import com.nestorrente.jitl.util.ProxyUtils;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.nestorrente.jitl.module.Module;
-import com.nestorrente.jitl.template.TemplateEngine;
+import java.util.function.Supplier;
 
 // TODO Important: add case-converters (or path-converters) for allowing custom "class+method to filepath" transformation
 // TODO Interesting: give a way to create Jitl instances with default engines and post-processors? (i.e., a Jitl instance with Jtwig template engine and SQL post-processor)
@@ -16,12 +21,28 @@ import com.nestorrente.jitl.template.TemplateEngine;
 public class Jitl {
 
 	private final TemplateEngine templateEngine;
-
 	private final Collection<String> unmodifiableFileExtensionsView;
 
-	private final Map<Class<? extends Module>, Module> modules;
+	private final Map<Class<? extends Processor>, Processor> processors;
 
-	Jitl(TemplateEngine templateEngine, Collection<String> fileExtensions, Map<Class<? extends Module>, Module> modules) {
+	private final Charset encoding;
+
+	private final CacheStrategy cacheStrategy;
+	private final Supplier<? extends CacheManager> cacheManagerSupplier;
+
+	private final ParamProviderRegister paramProviderRegister;
+	private final boolean autoRegisterParamProviders;
+
+	Jitl(
+			TemplateEngine templateEngine,
+			Collection<String> fileExtensions,
+			Map<Class<? extends Processor>, Processor> processors,
+			Charset encoding,
+			CacheStrategy cacheStrategy,
+			Supplier<? extends CacheManager> cacheManagerSupplier,
+			ParamProviderRegister paramProviderRegister,
+			boolean autoRegisterParamProviders
+	) {
 
 		this.templateEngine = templateEngine;
 
@@ -32,7 +53,15 @@ public class Jitl {
 
 		this.unmodifiableFileExtensionsView = Collections.unmodifiableCollection(fileExtensionsCopy);
 
-		this.modules = new HashMap<>(modules);
+		this.processors = new HashMap<>(processors);
+
+		this.encoding = encoding;
+
+		this.cacheStrategy = cacheStrategy;
+		this.cacheManagerSupplier = cacheManagerSupplier;
+
+		this.paramProviderRegister = paramProviderRegister;
+		this.autoRegisterParamProviders = autoRegisterParamProviders;
 
 	}
 
@@ -46,27 +75,18 @@ public class Jitl {
 			throw new IllegalArgumentException(String.format("Class %s is not an interface", interfaze.getName()));
 		}
 
-		@SuppressWarnings("unchecked")
-		T object = (T) Proxy.newProxyInstance(Jitl.class.getClassLoader(), new Class<?>[] { interfaze }, new JitlMethodInvocationHandler(interfaze, this));
+		// FIXME ensure singleton instances of each interface
 
-		return object;
-
-	}
-
-	TemplateEngine getTemplateEngine() {
-		return this.templateEngine;
-	}
-
-	Collection<String> getFileExtensions() {
-		return this.unmodifiableFileExtensionsView;
-	}
-
-	<M extends Module> M getModule(Class<M> moduleClass) {
-
-		@SuppressWarnings("unchecked")
-		M module = (M) this.modules.get(moduleClass);
-
-		return module;
+		return ProxyUtils.createProxy(interfaze, new JitlProxyInvocationHandler(
+				this.templateEngine,
+				this.processors,
+				this.unmodifiableFileExtensionsView,
+				this.encoding,
+				this.cacheStrategy,
+				this.cacheManagerSupplier.get(),
+				this.paramProviderRegister,
+				this.autoRegisterParamProviders
+		));
 
 	}
 
