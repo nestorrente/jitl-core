@@ -1,8 +1,10 @@
 # Java Interface Template Library
 
-<aside class="notice">
-This library is currently on development. Please, don't use it in production environments. Stable version 4.0.0 comming soon.
-</aside>
+## Disclaimer
+
+_This library is currently on development. Please, don't use it in production environments._
+
+_Stable version 4.0.0 comming soon._
 
 ## Table of contents
 + **[What is JITL](#what-is-jitl)**
