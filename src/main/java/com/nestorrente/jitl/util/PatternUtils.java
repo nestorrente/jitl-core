@@ -8,11 +8,12 @@ import java.util.regex.Pattern;
 public class PatternUtils {
 
 	/**
-	 * @param input
-	 * @param regex
-	 * @param converter
-	 *            A {@code match -> replacement} function.
-	 * @return
+	 * Finds and replaces matches from the {@code input} string using the {@code regex} regular expression and the {@code converter} replacement function.
+	 *
+	 * @param input     input string.
+	 * @param regex     regular expression that must be used in order to find matches.
+	 * @param converter A {@code match -> replacement} function.
+	 * @return the resultant string
 	 */
 	public static String replace(String input, Pattern regex, Function<String, String> converter) {
 
@@ -38,11 +39,12 @@ public class PatternUtils {
 	}
 
 	/**
-	 * @param input
-	 * @param regex
-	 * @param converter
-	 *            A {@code (match, backreferences) -> replacement} function. {@code backreferences} array contains {@code match} in its 0-index.
-	 * @return
+	 * Finds and replaces matches from the {@code input} string using the {@code regex} regular expression and the {@code converter} replacement function.
+	 *
+	 * @param input     input string.
+	 * @param regex     regular expression that must be used in order to find matches.
+	 * @param converter A {@code (match, backreferences) -> replacement} function. {@code backreferences} array contains {@code match} in its 0-index.
+	 * @return the resultant string
 	 */
 	public static String replace(String input, Pattern regex, BiFunction<String, String[], String> converter) {
 

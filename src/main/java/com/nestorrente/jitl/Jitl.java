@@ -21,6 +21,7 @@ public class Jitl {
 	}
 
 	/**
+	 * @param <T>       type of the interface.
 	 * @param interfaze Interface to be implemented by resultant object.
 	 * @return An object that implements {@code interfaze} method's.
 	 */

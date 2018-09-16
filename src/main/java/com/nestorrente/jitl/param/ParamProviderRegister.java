@@ -46,11 +46,11 @@ public class ParamProviderRegister {
 	}
 
 	/**
-	 * TODO complete Javadoc
+	 * Returns the {@link ParamProvider} registered instance, or auto-registers a new one if {@code autoRegister} is {@code true}.
 	 *
-	 * @param providerClass
+	 * @param providerClass parameter provider's class reference.
 	 * @param autoRegister  when {@code true}, the provider is instantiated and registered if it was not registered before.
-	 * @return
+	 * @return parameter provider's instance
 	 */
 	public ParamProvider getParamProvider(Class<? extends ParamProvider> providerClass, boolean autoRegister) {
 

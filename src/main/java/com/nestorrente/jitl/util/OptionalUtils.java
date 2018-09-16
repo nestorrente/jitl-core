@@ -15,6 +15,7 @@ public class OptionalUtils {
 	 * describing the value, otherwise returns an {@code Optional} produced by the
 	 * supplying function.
 	 *
+	 * @param <T>      Type of the value
 	 * @param optional Initial optional
 	 * @param supplier the supplying function that produces an {@code Optional}
 	 *                 to be returned
