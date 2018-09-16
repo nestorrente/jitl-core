@@ -1,16 +1,12 @@
 package com.nestorrente.jitl.cache;
 
-import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.function.Supplier;
 
-public interface CacheManager {
+public interface CacheManager<K, V> {
 
-	void cacheUri(Method method, String uri);
+	V getOrCompute(K key, Supplier<? extends V> valueSupplier);
 
-	Optional<String> getUri(Method method);
-
-	void cacheContents(Method method, String contents);
-
-	Optional<String> getContents(Method method);
+	Optional<V> getIfExists(K key);
 
 }

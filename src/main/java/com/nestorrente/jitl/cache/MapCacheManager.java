@@ -1,29 +1,29 @@
 package com.nestorrente.jitl.cache;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MapCacheManager implements CacheManager {
+public class MapCacheManager<K, V> extends AbstractCacheManager<K, V> {
 
-	private final Map<Method, String> uriCache = new ConcurrentHashMap<>();
-	private final Map<Method, String> contentsCache = new ConcurrentHashMap<>();
+	private final Map<K, V> map;
 
-	@Override public void cacheUri(Method method, String uri) {
-		this.uriCache.put(method, uri);
+	public MapCacheManager() {
+		// FIXME utilizar Locks para proteger esto de forma correcta:
+		// - Pueden leer varios a la vez.
+		// - Si alguien quiere escribir, nadie puede escribir ni leer.
+		// - Estos locks deben ser por key, para no bloquear a otros.
+		this.map = new ConcurrentHashMap<>();
 	}
 
-	@Override public Optional<String> getUri(Method method) {
-		return Optional.ofNullable(this.uriCache.get(method));
+	@Override
+	public Optional<V> getIfExists(K key) {
+		return Optional.ofNullable(this.map.get(key));
 	}
 
-	@Override public void cacheContents(Method method, String contents) {
-		this.uriCache.put(method, contents);
-	}
-
-	@Override public Optional<String> getContents(Method method) {
-		return Optional.ofNullable(this.contentsCache.get(method));
+	@Override
+	protected void storeComputedValue(K key, V value) {
+		this.map.put(key, value);
 	}
 
 }

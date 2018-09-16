@@ -1,16 +1,14 @@
-package com.nestorrente.jitl.annotation;
+package com.nestorrente.jitl.annotation.cache;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.METHOD)
+@Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ClasspathTemplate {
+public @interface CacheTemplate {
 
-	String value() default "";
-
-	boolean cacheable() default false;
+	boolean value() default true;
 
 }

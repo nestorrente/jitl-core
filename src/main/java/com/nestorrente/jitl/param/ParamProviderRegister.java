@@ -1,8 +1,7 @@
 package com.nestorrente.jitl.param;
 
-import com.nestorrente.jitl.annotation.Cacheable;
+import com.nestorrente.jitl.annotation.cache.Cacheable;
 import com.nestorrente.jitl.exception.UncheckedReflectiveOperationException;
-import com.nestorrente.jitl.util.AnnotationUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +17,7 @@ public class ParamProviderRegister {
 
 	public void registerParamProvider(ParamProvider paramProvider) {
 
-		boolean cacheable = AnnotationUtils.get(paramProvider.getClass(), Cacheable.class)
-				.isPresent();
+		boolean cacheable = paramProvider.getClass().isAnnotationPresent(Cacheable.class);
 
 		this.registerParamProvider(paramProvider, cacheable);
 
@@ -35,13 +33,13 @@ public class ParamProviderRegister {
 
 		if(cacheable) {
 
-			this.paramProviders.put(providerClass, paramProvider);
-
-		} else {
-
 			CacheableParamProviderDecorator cacheableParamProvider = new CacheableParamProviderDecorator(paramProvider);
 
 			this.paramProviders.put(providerClass, cacheableParamProvider);
+
+		} else {
+
+			this.paramProviders.put(providerClass, paramProvider);
 
 		}
 

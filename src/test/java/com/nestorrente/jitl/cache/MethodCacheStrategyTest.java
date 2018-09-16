@@ -7,7 +7,12 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Ignore("Not defined yet")
 public class MethodCacheStrategyTest {
@@ -37,7 +42,7 @@ public class MethodCacheStrategyTest {
 	/*
 	 * TODO replantear sistema de caché:
 	 *
-	 * Tal vez CacheManager debería ser específico; es decir,
+	 * Tal vez _Deprecated_CacheManager debería ser específico; es decir,
 	 * tener métodos getUri/cacheUri y getTemplate/cacheTemplate.
 	 * No obstante, esto tiene que delegar en dos cachés (ya sean de Guava, Mapas, o lo que sea).
 	 * Otra opción es no poder personalizar la caché. Usar Mapas o Guava, la que queramos,
@@ -50,24 +55,19 @@ public class MethodCacheStrategyTest {
 	 */
 
 	private Jitl jitl;
-	private TestCacheManager cache;
 
 	@Before
 	public void setup() {
 
-		this.cache = new TestCacheManager();
-
 		this.jitl = Jitl.builder()
-				.setCacheStrategy(CacheStrategy.NONE)
+				.setCacheTemplates(false)
 				.setTemplateEngine(NoOpTemplateEngine.getInstance())
-				.setCacheManagerSupplier(() -> this.cache)
 				.build();
 
 	}
 
 	@After
 	public void cleanup() {
-		this.cache = null;
 		this.jitl = null;
 	}
 

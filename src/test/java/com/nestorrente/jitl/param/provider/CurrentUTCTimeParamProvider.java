@@ -19,7 +19,7 @@ public class CurrentUTCTimeParamProvider implements ParamProvider {
 		Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(UTC_TIMEZONE_ID));
 
 		params.put("year", calendar.get(Calendar.YEAR));
-		params.put("month", calendar.get(Calendar.MONTH));
+		params.put("month", calendar.get(Calendar.MONTH) + 1);
 		params.put("day", calendar.get(Calendar.DAY_OF_MONTH));
 		params.put("hours", calendar.get(Calendar.HOUR_OF_DAY));
 		params.put("minutes", calendar.get(Calendar.MINUTE));

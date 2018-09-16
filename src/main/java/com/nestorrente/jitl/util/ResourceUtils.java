@@ -21,7 +21,7 @@ public class ResourceUtils {
 	// com.nestorrente.example -> /com/nestorrente/example/
 	// MyClass -> /my_class/
 	public static String packageOrClassNameToUri(String packageName) {
-		return Arrays.stream(PACKAGE_SPLIT_PATTERN.split(packageName)).map(StringUtils::camelToLowerUnderscore).collect(Collectors.joining(FOLDER_SEPARATOR, FOLDER_SEPARATOR, FOLDER_SEPARATOR));
+		return Arrays.stream(PACKAGE_SPLIT_PATTERN.split(packageName)).map(StringCaseUtils::camelToLowerUnderscore).collect(Collectors.joining(FOLDER_SEPARATOR, FOLDER_SEPARATOR, FOLDER_SEPARATOR));
 	}
 
 	public static String ensureAbsoluteUri(String uri) {

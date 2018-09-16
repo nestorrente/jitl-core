@@ -1,14 +1,10 @@
 package com.nestorrente.jitl;
 
-import com.nestorrente.jitl.cache.CacheManager;
-import com.nestorrente.jitl.cache.CacheStrategy;
-import com.nestorrente.jitl.cache.MapCacheManager;
 import com.nestorrente.jitl.param.ParamProvider;
 import com.nestorrente.jitl.param.ParamProviderRegister;
 import com.nestorrente.jitl.processor.Processor;
 import com.nestorrente.jitl.template.DefaultTemplateEngine;
 import com.nestorrente.jitl.template.TemplateEngine;
-import com.nestorrente.jitl.util.ArrayUtils;
 import org.apache.commons.lang3.builder.Builder;
 
 import java.nio.charset.Charset;
@@ -19,28 +15,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class JitlBuilder implements Builder<Jitl> {
+
+	private static final String[] DEFAULT_FILE_EXTENSIONS = { "txt", "tpl", "tmpl" };
 
 	private TemplateEngine templateEngine;
 	private final List<String> fileExtensions;
 	private final Map<Class<? extends Processor>, Processor> processors;
 	private Charset encoding;
-	private CacheStrategy cacheStrategy;
-	private Supplier<? extends CacheManager> cacheManagerSupplier;
+	private boolean cacheTemplates;
 	private final ParamProviderRegister paramProviderRegister;
 	private boolean autoRegisterParamProviders;
 
 	JitlBuilder() {
+
 		this.templateEngine = DefaultTemplateEngine.getInstance();
 		this.fileExtensions = new ArrayList<>();
 		this.processors = new HashMap<>();
 		this.encoding = Charset.defaultCharset();
-		this.cacheStrategy = CacheStrategy.URI;
-		this.cacheManagerSupplier = MapCacheManager::new;
+		this.cacheTemplates = false;
 		this.paramProviderRegister = new ParamProviderRegister();
 		this.autoRegisterParamProviders = false;
+
+		Collections.addAll(this.fileExtensions, DEFAULT_FILE_EXTENSIONS);
+
 	}
 
 	public JitlBuilder setTemplateEngine(TemplateEngine templateEngine) {
@@ -59,7 +58,7 @@ public class JitlBuilder implements Builder<Jitl> {
 	}
 
 	public JitlBuilder addFileExtensions(String... extensions) {
-		ArrayUtils.addAll(this.fileExtensions, extensions);
+		Collections.addAll(this.fileExtensions, extensions);
 		return this;
 	}
 
@@ -82,14 +81,8 @@ public class JitlBuilder implements Builder<Jitl> {
 		return this;
 	}
 
-	public JitlBuilder setCacheStrategy(CacheStrategy cacheStrategy) {
-		this.cacheStrategy = Objects.requireNonNull(cacheStrategy);
-		return this;
-	}
-
-	public JitlBuilder setCacheManagerSupplier(Supplier<? extends CacheManager> cacheManagerSupplier) {
-		Objects.requireNonNull(cacheManagerSupplier);
-		this.cacheManagerSupplier = cacheManagerSupplier;
+	public JitlBuilder setCacheTemplates(boolean cacheTemplates) {
+		this.cacheTemplates = cacheTemplates;
 		return this;
 	}
 
@@ -115,15 +108,17 @@ public class JitlBuilder implements Builder<Jitl> {
 
 		Collections.reverse(instanceFileExtensions);
 
-		return new Jitl(
+		JitlConfig config = new JitlConfig(
 				this.templateEngine,
 				instanceFileExtensions,
-				this.processors, this.encoding,
-				this.cacheStrategy,
-				this.cacheManagerSupplier,
+				this.processors,
+				this.encoding,
+				this.cacheTemplates,
 				this.paramProviderRegister,
 				this.autoRegisterParamProviders
 		);
+
+		return new Jitl(config);
 
 	}
 

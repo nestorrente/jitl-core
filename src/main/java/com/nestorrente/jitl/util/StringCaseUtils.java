@@ -1,10 +1,9 @@
 package com.nestorrente.jitl.util;
 
-import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-public class StringUtils {
+public class StringCaseUtils {
 
 	// Busca un grupo de mayúsculas juntas, y captura dicho grupo sin incluir las letras de los extremos. Ejemplo: en "SQLException" encuentra "SQLE" y captura "QL".
 	private static final Pattern UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN = Pattern.compile("(?<=[A-Z])[A-Z]+(?=[A-Z])");
@@ -15,25 +14,13 @@ public class StringUtils {
 	public static String camelToLowerUnderscore(String camel) {
 
 		// MySQLQuery -> MySqlQuery
-		String result = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, (Function<String, String>) String::toLowerCase);
+		String capitalizedCamel = PatternUtils.replace(camel, UPPERCASE_LETTERS_GROUP_BETWEEN_UPERCASE_LETTERS_PATTERN, (Function<String, String>) String::toLowerCase);
 
 		// MySqlQuery -> My_Sql_Query
-		result = CAMMEL_CASE_SEPARATOR_PATTERN.matcher(result).replaceAll("_");
+		String capitalizedUnderscore = CAMMEL_CASE_SEPARATOR_PATTERN.matcher(capitalizedCamel).replaceAll("_");
 
 		// My_Sql_Query -> my_sql_query
-		return result.toLowerCase();
-
-	}
-
-	public static String joinRepeating(String element, String delimiter, int times) {
-
-		StringJoiner joiner = new StringJoiner(delimiter);
-
-		while(times-- > 0) {
-			joiner.add(element);
-		}
-
-		return joiner.toString();
+		return capitalizedUnderscore.toLowerCase();
 
 	}
 

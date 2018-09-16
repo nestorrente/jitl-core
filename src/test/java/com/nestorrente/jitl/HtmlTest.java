@@ -1,6 +1,5 @@
 package com.nestorrente.jitl;
 
-import com.nestorrente.jitl.cache.CacheStrategy;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -15,7 +14,7 @@ public class HtmlTest {
 
 		Jitl jitl = Jitl.builder()
 				.addFileExtensions("htm", "html")
-				.setCacheStrategy(CacheStrategy.CONTENTS)
+				.setCacheTemplates(true)
 				.build();
 
 		INSTANCE = jitl.getInstance(Html.class);

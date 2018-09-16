@@ -12,7 +12,8 @@ public class CacheableParamProviderDecorator implements ParamProvider {
 		this.params = new CacheableResult<>(realProvider::params);
 	}
 
-	@Override public Map<String, Object> params() {
+	@Override
+	public Map<String, Object> params() {
 		return this.params.get();
 	}
 

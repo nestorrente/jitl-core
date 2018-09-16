@@ -38,7 +38,7 @@ public class ParamProviderTest {
 		String expected = String.format(
 				"Today is %s-%s-%s",
 				utcCalendar.get(Calendar.YEAR),
-				utcCalendar.get(Calendar.MONTH),
+				utcCalendar.get(Calendar.MONTH) + 1,
 				utcCalendar.get(Calendar.DAY_OF_MONTH));
 
 		assertEquals(expected, message);

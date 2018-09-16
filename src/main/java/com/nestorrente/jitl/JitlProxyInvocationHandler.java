@@ -1,21 +1,19 @@
 package com.nestorrente.jitl;
 
 import com.google.common.collect.Iterables;
-import com.nestorrente.jitl.annotation.Cache;
 import com.nestorrente.jitl.annotation.UseProcessor;
-import com.nestorrente.jitl.annotation.param.Param;
+import com.nestorrente.jitl.annotation.cache.CacheTemplate;
+import com.nestorrente.jitl.annotation.param.ParamName;
+import com.nestorrente.jitl.annotation.param.ParamNames;
 import com.nestorrente.jitl.annotation.param.ParamProviders;
-import com.nestorrente.jitl.annotation.param.Params;
 import com.nestorrente.jitl.cache.CacheManager;
-import com.nestorrente.jitl.cache.CacheStrategy;
+import com.nestorrente.jitl.cache.MapCacheManager;
 import com.nestorrente.jitl.exception.MissingParameterNameException;
 import com.nestorrente.jitl.exception.UnregisteredProcessorException;
 import com.nestorrente.jitl.exception.WrongAnnotationUseException;
 import com.nestorrente.jitl.param.ParamProvider;
-import com.nestorrente.jitl.param.ParamProviderRegister;
 import com.nestorrente.jitl.processor.NoOpProcessor;
 import com.nestorrente.jitl.processor.Processor;
-import com.nestorrente.jitl.template.TemplateEngine;
 import com.nestorrente.jitl.util.AnnotationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -36,49 +32,30 @@ class JitlProxyInvocationHandler implements InvocationHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JitlProxyInvocationHandler.class);
 
-	private final TemplateEngine templateEngine;
-	private final Map<Class<? extends Processor>, Processor> processors;
-	private final Collection<String> fileExtensions;
-	private final Charset encoding;
-	private final CacheStrategy cacheStrategy;
-	private final CacheManager cacheManager;
-	private final ParamProviderRegister paramProviderRegister;
-	private final boolean autoRegisterParamProviders;
+	private final JitlConfig config;
+	private final CacheManager<Method, String> contentsCacheManager;
 
-	JitlProxyInvocationHandler(
-			TemplateEngine templateEngine,
-			Map<Class<? extends Processor>, Processor> processors,
-			Collection<String> fileExtensions,
-			Charset encoding,
-			CacheStrategy cacheStrategy,
-			CacheManager cacheManager,
-			ParamProviderRegister paramProviderRegister,
-			boolean autoRegisterParamProviders
-	) {
-		this.templateEngine = templateEngine;
-		this.processors = processors;
-		this.fileExtensions = fileExtensions;
-		this.encoding = encoding;
-		this.cacheStrategy = cacheStrategy;
-		this.cacheManager = cacheManager;
-		this.paramProviderRegister = paramProviderRegister;
-		this.autoRegisterParamProviders = autoRegisterParamProviders;
+	JitlProxyInvocationHandler(JitlConfig config) {
+		this.config = config;
+		this.contentsCacheManager = new MapCacheManager<>();
 	}
 
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-		Map<String, Object> parameters = this.getTemplateParameters(method, args);
+		// TODO crear una clase con información del método, de modo que ésta pueda quedar cacheada y no leerse en cada invocación
+
+		Map<String, Object> parameters = this.readMethodParameters(method, args);
 
 		Processor processor = this.getProcessor(method);
-		CacheStrategy cacheStrategy = this.getTemplateCacheType(method);
+		boolean cacheTemplate = this.isTemplateCacheEnabled(method);
 
 		String templateContents = new TemplateContentsReader(
 				method,
-				this.encoding,
-				cacheStrategy,
-				this.cacheManager,
-				() -> Iterables.concat(processor.getFileExtensions(), this.fileExtensions)
+				this.config.getEncoding(),
+				cacheTemplate,
+				this.contentsCacheManager,
+				() -> Iterables.concat(processor.getFileExtensions(), this.config.getFileExtensions())
 		).getTemplateContents();
 
 		String renderedTemplate = this.renderTemplate(templateContents, parameters);
@@ -105,7 +82,7 @@ class JitlProxyInvocationHandler implements InvocationHandler {
 
 		Class<? extends Processor> processorClass = processorClassOptional.get();
 
-		Processor processor = this.processors.get(processorClass);
+		Processor processor = this.config.getProcessors().get(processorClass);
 
 		if(processor == null) {
 			throw new UnregisteredProcessorException(String.format("Processor %s is not registered in this %s instance", processorClass.getName(), Jitl.class.getSimpleName()));
@@ -115,25 +92,25 @@ class JitlProxyInvocationHandler implements InvocationHandler {
 
 	}
 
-	private CacheStrategy getTemplateCacheType(Method method) {
-		return AnnotationUtils.getFromMethodOrClass(method, Cache.class)
-				.map(Cache::value)
-				.orElse(this.cacheStrategy);
+	private boolean isTemplateCacheEnabled(Method method) {
+		return AnnotationUtils.getFromMethodOrClass(method, CacheTemplate.class)
+				.map(CacheTemplate::value)
+				.orElse(this.config.isCacheTemplates());
 	}
 
 	private String renderTemplate(String templateContents, Map<String, Object> parameters) {
-		return this.templateEngine.render(templateContents, parameters);
+		return this.config.getTemplateEngine().render(templateContents, parameters);
 	}
 
-	private Map<String, Object> getTemplateParameters(Method method, Object[] args) {
+	private Map<String, Object> readMethodParameters(Method method, Object[] args) {
 
-		// FIXME don't allow using @Params and @Param at the same time
+		// FIXME don't allow using @ParamNames and @ParamName at the same time
 
-		Optional<String[]> paramsAnnotationValues = AnnotationUtils.get(method, Params.class)
-				.map(Params::value);
+		Optional<String[]> paramNamesAnnotationValues = AnnotationUtils.get(method, ParamNames.class)
+				.map(ParamNames::value);
 
-		if(paramsAnnotationValues.isPresent() && method.getParameterCount() != paramsAnnotationValues.get().length) {
-			throw new WrongAnnotationUseException(String.format("@%s annotation must specify the name of all parameters", Params.class.getSimpleName()));
+		if(paramNamesAnnotationValues.isPresent() && method.getParameterCount() != paramNamesAnnotationValues.get().length) {
+			throw new WrongAnnotationUseException(String.format("@%s annotation must specify the name of all parameters", ParamNames.class.getSimpleName()));
 		}
 
 		Map<String, Object> templateParameters = this.getParamsFromProviders(method);
@@ -142,34 +119,37 @@ class JitlProxyInvocationHandler implements InvocationHandler {
 
 		for(Parameter param : method.getParameters()) {
 
-			Optional<String> paramAnnotationValue = AnnotationUtils.get(param, Param.class)
-					.map(Param::value);
+			String name = this.getParamName(param, paramIndex, paramNamesAnnotationValues);
+			Object value = args[paramIndex];
 
-			String name;
-
-			if(paramAnnotationValue.isPresent()) {
-
-				name = paramAnnotationValue.get();
-
-			} else if(paramsAnnotationValues.isPresent()) {
-
-				name = paramsAnnotationValues.get()[paramIndex];
-
-			} else if(param.isNamePresent()) {
-
-				name = param.getName();
-
-			} else {
-				throw new MissingParameterNameException("Cannot infer parameter name: " + param.toString());
-			}
-
-			templateParameters.put(name, args[paramIndex]);
+			templateParameters.put(name, value);
 
 			++paramIndex;
 
 		}
 
 		return templateParameters;
+
+	}
+
+	private String getParamName(Parameter param, int paramIndex, Optional<String[]> paramNamesAnnotationValues) {
+
+		Optional<String> paramNameAnnotationValue = AnnotationUtils.get(param, ParamName.class)
+				.map(ParamName::value);
+
+		if(paramNameAnnotationValue.isPresent()) {
+			return paramNameAnnotationValue.get();
+		}
+
+		if(paramNamesAnnotationValues.isPresent()) {
+			return paramNamesAnnotationValues.get()[paramIndex];
+		}
+
+		if(param.isNamePresent()) {
+			return param.getName();
+		}
+
+		throw new MissingParameterNameException("Cannot infer parameter name: " + param.toString());
 
 	}
 
@@ -198,7 +178,7 @@ class JitlProxyInvocationHandler implements InvocationHandler {
 				.orElseGet(Stream::empty);
 
 		return Stream.concat(methodLevelProviders, classLevelProviders)
-				.map(c -> this.paramProviderRegister.getParamProvider(c, this.autoRegisterParamProviders));
+				.map(c -> this.config.getParamProviderRegister().getParamProvider(c, this.config.isParamProviderAutoRegisterEnabled()));
 
 	}
 

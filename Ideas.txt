@@ -1,61 +1,75 @@
+TEST:
+- Testear @Singleton.
+
 README:
 - Añadir información sobre los ParamProvider.
 	- Y cómo funciona Cacheable sobre ellos.
 - Añadir información sobre Cacheable.
 
 PRIORITARIO:
-- Hacer que cada instancia de interfaz creada por JITL sea un singleton.
-- Cambiar los tests a HSQLDB para no depender de ninguna base de datos externa.
-	- Adaptar aquellos que no son compatibles con HSQLDB.
-		- Muchos se utilizaban para probar cosas de Jtwig; habría que separar dichas funcionalidades.
-			- El proyecto jitl-jtwig-sql-processor-tests podría dejar de tener sentido.
-	- Revisar que los tests estén bien hechos.
-	- Leer: https://tillias.wordpress.com/2012/11/10/unit-testing-and-integration-testing-using-junit-liquibase-hsqldb-hibernate-maven-and-spring-framework/
 - Comentar en inglés para subir a GitHub/Maven.
-	- Simplemente para cargar archivos de texto y poder hacerles un post-procesado sin que se reemplace nada.
 - Crear un procesador para JSON que utilice Gson. Simplemente pide un Gson (o GsonBuilder) y se le pueden poner las extensiones.
 - REVISAR LA NOTA "Tareas GitHub" de Google Keep.
 
 NUEVAS IDEAS (01/02/2018):
-- Crear anotaciones @AdditionalParam (o @AdditionalStringParam?), @AdditionalIntParam, @AdditionalBooleanParam, etc.
-	- Y sus equivalentes en plural para usar con @Repeatable.
-	- Éstas anotaciones permitirán añadir parámetros constantes al template sin que se le tengan que pasar
-	  como argumentos del método.
-	- Era bueno buscar nombres más cortos.
-	- Problema: Hay que hacer una por cada tipo de dato, y aún por encima otra por cada uno de ellos para que sea @Repeatable.
-		- Quizá sea mejor descartarlo en favor de los Provider.
-- Crear una anotación @ParamProviders que permita especificar uno o varios proveedores de parámetros.
-	- Se podrá especificar un nombre (los providers se podrán registrar en JITL por nombre) o su clase.
-		- ACTUALIZACIÓN 07/02/2018: se descarta el uso por nombre. Siempre por clase.
-		- BUG!! Ahora mismo los providers que se auto-instancian con su uso están funcionando mal.
-			- Se instancian cada vez que se necesitan (deberían instanciarse y registrarse la primera vez).
-			- No se comprueba si son cacheables.
-				- Crear un método de utilidades isCacheable(AnnotatedElement)?
-					- ¿En AnnotationUtils o en una nueva, tipo CacheableUtils?
-		- Cuando van por clase, ¿es necesario igualmente que estén registrados en JITL?
-			- En caso de que sea así, debería permitirse registrarlos sin nombre también (de forma anónima).
-		- Sino, tendrá que instanciarse por Reflection. Esto me gusta menos.
-		- Si en un futuro hacemos una extensión o algo similar que permita integrarse con Spring,
-		  los ParamProvider podrían registrarse automáticamente (con el nombre del Bean de Spring
-		  aquellos que lo tengan, y sin nombre el resto)
+
+[ JITL Core ]
+- Hacer que cada instancia de interfaz creada por JITL sea un singleton.
 - Permitir más de un TemplateEngine? De la misma forma que se admiten varios procesadores/procesadores.
-	- Se podría definir uno por defecto (inicialmente, NoOpTemplateEngine) y tener una anotación
-	  estilo @UseTemplateEngine en las interfaces.
-		- La anotación @UseTemplateEngine sería a nivel de clase, pero... ¿también de método?
-			- No le veo sentido, al igual que no lo hicimos con los procesadores.
-- Si se permiten varios TemplateEngine pero se permite establecer uno por defecto,
-	- ¿Y permitir @UseProcessor a nivel de método? Opino que tampoco tiene sentido (como no lo tiene en @UseTemplateEngine).
-  debería permitirse también establecer un procesador/procesador por defecto.
-- Dar opciones en el procesador de SQL para crear transformers de entrada, además de los de salida?
-	- Ahora mismo los transformers son para los getters del ResultSet. Pues lo mismo, pero para los setters del PreparedStatement.
+	- Pensar si realmente vale la pena. En un proyecto real normalmente se usa el mismo para todo.
+		- Sí, incluso es posible que se use un único procesador, pero permitir varios hace que JITL sea más flexible,
+		  y -creo- no es descabellado pensar que se pueda utilizar JITL para renderizar consultas SQL y código HTML.
+	- El programador podría definir uno por defecto (que, en caso de omisión, será NoOpTemplateEngine)
+	  y tener una anotación estilo @UseTemplateEngine en las interfaces.
+		✗ La anotación @UseTemplateEngine sería a nivel de clase, pero... ¿también de método?
+			✗ No le veo sentido, al igual que no lo hicimos con los procesadores.
+			  Además, si se supone que la idea es incentivar el uso de un único motor de plantillas
+			  (entre otras cosas, porque sino vuelves locos a los programadores de tu proyecto),
+			  no deberíamos dar facilidades para que cada método use uno distinto y así "reine el caos" xD
 - Buscar otro nombre a JITL y darle una vuelta completa a la implementación para poder sacar una versión 1 completa.
 	- Más que nada, porque verisón 4 o 5 queda feo. Realmente las primeras versiones deberían haber
 	  sido alphas o betas, ya que hubo cambios constantemente.
 - ¿Adaptar la forma de hacer caché (CacheManager y demás) para que se utilice CacheableResult?
 	- Para ello habría que adaptar CacheableResult para que acepte parámetros en su llamada,
 	  pero esto haría que dejase de ser un Supplier. Darle una vuelta con calma.
+- PARÁMETROS CON ESTEROIDES:
+	- ¿Renombrar @Param/@Params a @Name/@Names o @ParamName/@ParamNames?
+	- Crear una anotación @ParamAttribute que se pueda poner a otras anotaciones.
+		- Tendrá un String value() que indicará el nombre del atributo.
+	- Anotar @Param y @Params con @ParamAttribute("name").
+	- Si un parámetro tiene una anotación que a su vez esté anotada con @ParamAttribute (como @Param),
+	  entonces el valor de dicha anotación es un atributo del parámetro.
+		- Por ejemplo, un parámetro anotado con @Param("pepe") (que a su vez está anotada con
+		  @ParamAttribute("name")), tendrá un atributo [name="pepe"].
+	- Si un método tiene una anotación que a su vez esté anotada con @ParamAttribute (como @Params),
+	  entonces el valor de dicha anotación (que deberá ser un array) indicará los valores del atributo
+	  para todos los parámetro del método.
+		- Por ejemplo, un método anotado con @Params({ "pepe", "hola" }) (que a su vez está anotada con
+		  @ParamAttribute("name"), indicará que cada uno de sus parámetros un atributo "name" cuyos
+		  valores son "pepe" y "hola" respectivamente.
+	- De esta forma, la clase Parameter<T> pasará a formar parte de JITL (ahora mismo está en SQL Processor)
+	  y tendrá métodos getAttribute(String), getAttribute(Annotation) para obtener sus atributos, además de
+	  un método getValue() para obtener su valor.
+		- Ojo, igualmente se puede dejar un método getName, porque el nombre es un caso especial, ya que
+		  los parámetros tienen nombre de por sí aunque no estén anotados.
+	- La pregunta es: los atributos del parámetro ya se han leído, cuando se llama a getAttribute
+	  simplemente se devuelven, o se leen en el momento en el que se piden?
+		- Se podría usar CacheableResult para que se lean solo la primera vez?
+			- Se podría cachear solo el getAttribute(String), ya que el getAttribute(Annotation)
+			  acabará llamando a getAttribute(String).
+			- No obstante, creo que también sería posible cachear ambos.
+				- Ya sea cacheando el resultado de ambos, como cacheando el valor del parámetro
+				  para cada anotación de tipo @ParamAttribute.
+					- Es decir, que getAttribute(Annotation) se ahorraría leer el valor de la
+					  meta-anotación, pero seguiría llamando a getAttribute(String), que sí
+					  tendría cacheado el resultado final.
+
+[ SQLProcessor ]
+- Dar opciones en el procesador de SQL para crear transformers de entrada, además de los de salida?
+	- Ahora mismo los transformers son para los getters del ResultSet. Pues lo mismo, pero para los setters del PreparedStatement.
 - Permitir especificar los tipos de datos de SQL de los parámetros mediante anotaciones @SQLType y @SQLTypes?
 	- ¿Y escalas? Para los BigDecimal y así parece necesario.
+- Devolver un mapa clave-valor cuando se pide Object?
 
 --- Locuras ---
 
@@ -71,8 +85,39 @@ NUEVAS IDEAS (01/02/2018):
 	- Las extensiones modificarían la clase MethodInfo, añadiendo o modificando propiedades.
 	- El caché se podría implementar como una extensión, si se hace correctamente.
 	- Los parámetros adicionales (por ahora, solo con @ParamProvider) se podrían implementar como una extensión.
+- ¿Auto registro de procesadores? Si se quiere usar un procesador no registrado, se registra en Jitl con una instancia por defecto.
+	- Problema: obliga a los procesadores a permitir crear una instancia por defecto.
+	- Segundo problema: para el procesador de SQL, que necesita una conexión, no tiene sentido.
+	- ¿Poder tener algunos auto-registrables, aunque no lo sean todos?
 
 --- Hecho o descartado ---
+
+✓ Crear una anotación @ParamProviders que permita especificar uno o varios proveedores de parámetros.
+	✓ Se podrá especificar un nombre (los providers se podrán registrar en JITL por nombre) o su clase.
+		✓ ACTUALIZACIÓN 07/02/2018: se descarta el uso por nombre. Siempre por clase.
+		✓ BUG!! Ahora mismo los providers que se auto-instancian con su uso están funcionando mal.
+			✓ Se instancian cada vez que se necesitan (deberían instanciarse y registrarse la primera vez).
+			✓ No se comprueba si son cacheables.
+				✓ Crear un método de utilidades isCacheable(AnnotatedElement)?
+					✓ ¿En AnnotationUtils o en una nueva, tipo CacheableUtils?
+		✓ Cuando van por clase, ¿es necesario igualmente que estén registrados en JITL?
+			✓ En caso de que sea así, debería permitirse registrarlos sin nombre también (de forma anónima).
+			✓ Actualización 09/02/2018: se permite la opción paramProviderAutoRegisterEnabled en JITL,
+			  de modo que no sea necesario registrarlos a mano.
+		✗ Sino, tendrá que instanciarse por Reflection. Esto me gusta menos.
+		✓ Si en un futuro hacemos una extensión o algo similar que permita integrarse con Spring,
+		  los ParamProvider podrían registrarse automáticamente (con el nombre del Bean de Spring
+		  aquellos que lo tengan, y sin nombre el resto)
+
+✗ Si se permiten varios TemplateEngine pero se permite establecer uno por defecto, ¿debería permitirse también establecer un procesador por defecto?
+	✗ Ojo, un procesador por defecto quizá no tenga mucho sentido, ya que una interfaz estará pensada para funcionar con un procesador concreto
+	  (por ejemplo, una interfaz de SQLProcessor puede tener anotaciones @SQLType, si al final las llevamos a cabo, y no funcionaría con otro).
+		✗ De hecho, es que si existe una interfaz que no depende de su procesador, ¿qué sentido tienen los nombres de sus métodos?
+		  Si se ejecuta con otro procesador, va a devolver otra cosa. El caso de los Template Engines es diferente, porque solo cambia
+		  la sintaxis de la plantilla, y no es descabellado pensar que un proyecto empiece con un motor (Jtwig) y después se decida usar otro (Velocity).
+	✗ ¿Y permitir @UseProcessor a nivel de método? Opino que tampoco tiene sentido (como no lo tiene en @UseTemplateEngine).
+		✗ Más que nada porque rompe drásticamente con el principio de responsabilidad única. Si una clase tiene que acceder
+		  a una base de datos, lo lógico será que todos sus métodos usen SQLProcessor o similar, pero siempre el mismo.
 
 ✓ Cambiar el concepto de "módulo" por "procesador", y el método "postProcess" por "process".
 	✓ El diagrama quedaría así:
@@ -80,9 +125,27 @@ NUEVAS IDEAS (01/02/2018):
 		(los processors pueden convertir el resultado a otro tipo, o simplemente realizar alguna acción y no devolver nada)
 
 ✓ Añadir en el core un TemplateEngine que no haga nada? IdentityTemplateEngine?
+	✓ Simplemente para cargar archivos de texto y poder hacerles un post-procesado sin que se renderice como si fuera una plantilla.
 	✓ Finalmente se ha llamado NoOpTemplateEngine.
 
+✗ [Descartado en favor de los Provider] Crear anotaciones @AdditionalParam (o @AdditionalStringParam?),
+  @AdditionalIntParam, @AdditionalBooleanParam, etc.
+	✗ Y sus equivalentes en plural para usar con @Repeatable.
+	✗ Éstas anotaciones permitirán añadir parámetros constantes al template sin que se le tengan que pasar
+	  como argumentos del método.
+	✗ Era bueno buscar nombres más cortos.
+	✗ Problema: Hay que hacer una por cada tipo de dato, y aún por encima otra por cada uno de ellos para que sea @Repeatable.
+		✗ Quizá sea mejor descartarlo en favor de los Provider.
+
 ---
+
+✓ Cambiar los tests a HSQLDB para no depender de ninguna base de datos externa.
+	✓ Adaptar aquellos que no son compatibles con HSQLDB.
+		✓ Muchos se utilizaban para probar cosas de Jtwig; habría que separar dichas funcionalidades.
+			✓ El proyecto jitl-jtwig-sql-processor-tests podría dejar de tener sentido.
+	✓ Revisar que los tests estén bien hechos.
+	✗ Leer: https://tillias.wordpress.com/2012/11/10/unit-testing-and-integration-testing-using-junit-liquibase-hsqldb-hibernate-maven-and-spring-framework/
+	✓ Finalmente, se ha optado por Apache Derby, que se puede inicializar y detener sin problemas desde los tests.
 
 ✓ Plantear executors como uno solo con diferentes transformers.
 ✓ En la clase QueryExecutors estarían los mismos que ahora, inicializados con su transformer correspondiente.
@@ -115,10 +178,6 @@ NUEVAS IDEAS (01/02/2018):
 
 ✗ Ver la opción de que los transformers devuelvan Optional?
 ✓ Distinguir entre transformers simples y múltiples? (uno o varios resultados) Los simples sí podrían devolver Optional.
-
----
-
-- Devolver un mapa clave-valor cuando se pide Object?
 
 ---
 

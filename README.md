@@ -64,10 +64,10 @@ public class Main {
 }
 ```
 In this example, ```com.example.HtmlViews.login()``` method will render the resource ```/com/example/html_views/login.tpl```, and ```com.example.HtmlViews.welcome(String)``` method will render the resource ```/com/example/html_views/welcome.tpl```.
-+ By default, resources can have **.tpl** or **.txt** extensions. Additional file extensions can be specified when building the ```Jitl``` instance. See [File Extensions](#file-extensions) section.
++ By default, resources can have **.tmpl**, **.tpl** or **.txt** extensions. Additional file extensions can be specified when building the ```Jitl``` instance. See [File Extensions](#file-extensions) section.
 + Custom resource paths can be specified using annotations. See [@BaseClasspath, @ClasspathTemplate and @InlineTemplate annotations](#baseclasspath-classpathtemplate-and-inlinetemplate-annotations) section.
 
-When ```views.welcome("world")``` is called, the value of ```username``` parameter is passed to the template, and all the aparitions of ```$username``` are replaced by ```world```. The returned ```String``` is the result of the rendering process.
+When ```views.welcome("world")``` is called, the value of ```username``` parameter is passed to the template, and all the aparitions of ```$username``` are replaced by ```world```. The returned ```String``` is the result of the rendering process:
 ```html
 <html>
     <head>
@@ -194,7 +194,7 @@ Jitl jitl = Jitl.builder()
     .build();
 ```
 
-You can define your own ```TemplateEngine```s by implementing [```com.nestorrente.jitl.template.TemplateEngine```](src/main/java/com/nestorrente/jitl/template/TemplateEngine.java) interface.
+You can define your own ```TemplateEngine```s by implementing [```TemplateEngine```](src/main/java/com/nestorrente/jitl/template/TemplateEngine.java) interface.
 
 Other projects, like [```jitl-jtwig-template-engine```](https://github.com/nestorrente/jitl-jtwig-template-engine) provide thirty-party powerful template engines.
 

@@ -5,12 +5,11 @@ import com.nestorrente.jitl.annotation.ClasspathTemplate;
 import com.nestorrente.jitl.annotation.Encoding;
 import com.nestorrente.jitl.annotation.InlineTemplate;
 import com.nestorrente.jitl.cache.CacheManager;
-import com.nestorrente.jitl.cache.CacheStrategy;
 import com.nestorrente.jitl.exception.RuntimeIOException;
 import com.nestorrente.jitl.exception.WrongAnnotationUseException;
 import com.nestorrente.jitl.util.AnnotationUtils;
 import com.nestorrente.jitl.util.ResourceUtils;
-import com.nestorrente.jitl.util.StringUtils;
+import com.nestorrente.jitl.util.StringCaseUtils;
 
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -23,20 +22,20 @@ class TemplateContentsReader {
 
 	private final Method method;
 	private final Charset encoding;
-	private final CacheStrategy cacheStrategy;
-	private final CacheManager cacheManager;
+	private final boolean cacheTemplate;
+	private final CacheManager<Method, String> templateCacheManager;
 	private final Supplier<Iterable<String>> fileExtensionsSupplier;
 
 	TemplateContentsReader(
 			Method method,
 			Charset encoding,
-			CacheStrategy cacheStrategy,
-			CacheManager cacheManager,
+			boolean cacheTemplate,
+			CacheManager<Method, String> templateCacheManager,
 			Supplier<Iterable<String>> fileExtensionsSupplier) {
 		this.method = method;
 		this.encoding = encoding;
-		this.cacheStrategy = cacheStrategy;
-		this.cacheManager = cacheManager;
+		this.cacheTemplate = cacheTemplate;
+		this.templateCacheManager = templateCacheManager;
 		this.fileExtensionsSupplier = fileExtensionsSupplier;
 	}
 
@@ -70,38 +69,11 @@ class TemplateContentsReader {
 	}
 
 	private String getClasspathTemplateContents(String classpathAnnotationValue) {
-
-		// FIXME si la implementación de de CacheManager va a ser personalizable,
-		// igual no conviene llamar a getContents sin comprobar si la estrategia de caché es CONTENTS
-		return this.cacheManager.getContents(this.method).orElseGet(() -> {
-
-			// FIXME si la implementación de de CacheManager va a ser personalizable,
-			// igual no conviene llamar a getUri sin comprobar si la estrategia de caché es URI
-			String templateUri = this.cacheManager.getUri(this.method)
-					.orElseGet(() -> this.computeAndCacheTemplateUri(classpathAnnotationValue));
-
+		return this.templateCacheManager.getOrCompute(this.method, () -> {
+			String templateUri = this.computeTemplateUri(classpathAnnotationValue);
 			Charset templateCharset = this.getTemplateEncoding();
-
-			return this.readAndCacheTemplateContents(templateUri, templateCharset);
-
+			return this.readTemplateContents(templateUri, templateCharset);
 		});
-
-	}
-
-	private void cacheTemplateUri(String templateUri) {
-		if(this.cacheStrategy == CacheStrategy.URI) {
-			this.cacheManager.cacheUri(this.method, templateUri);
-		}
-	}
-
-	private String computeAndCacheTemplateUri(String classpathAnnotationValue) {
-
-		String templateUri = this.computeTemplateUri(classpathAnnotationValue);
-
-		this.cacheTemplateUri(templateUri);
-
-		return templateUri;
-
 	}
 
 	private String computeTemplateUri(String classpathAnnotationValue) {
@@ -112,7 +84,7 @@ class TemplateContentsReader {
 
 		String templateUri = Optional.ofNullable(classpathAnnotationValue)
 				.filter(s -> !s.isEmpty())
-				.orElseGet(() -> StringUtils.camelToLowerUnderscore(this.method.getName()));
+				.orElseGet(() -> StringCaseUtils.camelToLowerUnderscore(this.method.getName()));
 
 		if(templateUri.charAt(0) == '/') {
 			return templateUri;
@@ -124,22 +96,6 @@ class TemplateContentsReader {
 				.orElseGet(() -> ResourceUtils.packageOrClassNameToUri(declaringClass.getCanonicalName()));
 
 		return baseClasspathUri + templateUri;
-
-	}
-
-	private void cacheTemplateContents(String templateContents) {
-		if(this.cacheStrategy == CacheStrategy.CONTENTS) {
-			this.cacheManager.cacheContents(this.method, templateContents);
-		}
-	}
-
-	private String readAndCacheTemplateContents(String templateUri, Charset templateCharset) {
-
-		String templateContents = this.readTemplateContents(templateUri, templateCharset);
-
-		this.cacheTemplateContents(templateContents);
-
-		return templateContents;
 
 	}
 
