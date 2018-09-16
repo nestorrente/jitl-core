@@ -68,12 +68,22 @@ class TemplateContentsReader {
 				.orElse(this.encoding);
 	}
 
+	// TODO move this 3 methods to another file?
+
 	private String getClasspathTemplateContents(String classpathAnnotationValue) {
-		return this.templateCacheManager.getOrCompute(this.method, () -> {
-			String templateUri = this.computeTemplateUri(classpathAnnotationValue);
-			Charset templateCharset = this.getTemplateEncoding();
-			return this.readTemplateContents(templateUri, templateCharset);
-		});
+		return this.cacheTemplate
+				? this.getClasspathTemplateContentsFromCache(classpathAnnotationValue)
+				: this.computeClasspathTemplateContents(classpathAnnotationValue);
+	}
+
+	private String getClasspathTemplateContentsFromCache(String classpathAnnotationValue) {
+		return this.templateCacheManager.getOrCompute(this.method, () -> this.computeClasspathTemplateContents(classpathAnnotationValue));
+	}
+
+	private String computeClasspathTemplateContents(String classpathAnnotationValue) {
+		String templateUri = this.computeTemplateUri(classpathAnnotationValue);
+		Charset templateCharset = this.getTemplateEncoding();
+		return this.readTemplateContents(templateUri, templateCharset);
 	}
 
 	private String computeTemplateUri(String classpathAnnotationValue) {
