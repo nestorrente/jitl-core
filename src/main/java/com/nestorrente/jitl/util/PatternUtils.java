@@ -57,7 +57,7 @@ public class PatternUtils {
 		while(matcher.find()) {
 
 			sb.append(input.substring(lastPosition, matcher.start()));
-			sb.append(converter.apply(matcher.group(), getMatchBackreferences(matcher)));
+			sb.append(converter.apply(matcher.group(), getMatchBackReferences(matcher)));
 
 			lastPosition = matcher.end();
 
@@ -69,7 +69,7 @@ public class PatternUtils {
 
 	}
 
-	private static String[] getMatchBackreferences(Matcher matcher) {
+	private static String[] getMatchBackReferences(Matcher matcher) {
 
 		String[] backreferences = new String[matcher.groupCount() + 1];
 
