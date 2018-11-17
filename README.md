@@ -339,7 +339,7 @@ public interface DataAccess {
 	<dependency>
 		<groupId>com.nestorrente</groupId>
 		<artifactId>jitl-core</artifactId>
-		<version>4.0.0</version>
+		<version>4.0.0-RC1</version>
 	</dependency>
 </dependencies>
 ```
